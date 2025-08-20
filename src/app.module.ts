@@ -1,0 +1,43 @@
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { TypeOrmModule } from '@nestjs/typeorm'
+
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+
+// import { dataSourceOptions } from '../ormconfig'
+import { HttpModule } from '@nestjs/axios'
+import { dataSourceOptions } from './databases/data-source'
+import { JwtModule } from '@nestjs/jwt'
+import { RateLimitMiddleware } from 'middlewares/rate-limit.middleware'
+import { AuthModule } from 'modules/auth/auth.module'
+import { CommonModule } from 'modules/common/common.module'
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot(dataSourceOptions),
+    // MailerModule.register(),
+    {
+      ...HttpModule.register({}),
+      global: true,
+    },
+    {
+      ...JwtModule.register({ secret: process.env.JWT_SECRET }),
+      global: true,
+    },
+
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    HttpModule,
+    AuthModule,
+    CommonModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RateLimitMiddleware).forRoutes({ path: '*', method: RequestMethod.POST })
+  }
+}
