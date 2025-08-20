@@ -1,6 +1,5 @@
-import { getManyBy, getSingleBy } from '../../helper'
-
-import { dataSource } from '../../databases/data-source'
+import { dataSource } from 'databases/data-source'
+import { getCurrentDateTime, getManyBy, getSingleBy } from '../../helper'
 import { Subscriber } from './auth.entity'
 import { InternalServerErrorException } from '@nestjs/common'
 
@@ -11,61 +10,81 @@ export const getUsersBy = getManyBy(Subscriber)
  * Logs OTP request data into `tbl_log3`
  */
 export async function insertOtpLog(mobile: string, body: any): Promise<void> {
-  console.log(mobile, body)
-  const sql = `
-    INSERT INTO tbl_log3 (mobileno, message)
-    VALUES ($1, $2)`
   try {
-    await (await dataSource).query(sql, [mobile, JSON.stringify(body)])
+    const ds = await dataSource
+
+    await ds
+      .createQueryBuilder()
+      .insert()
+      .into('tbl_log3')
+      .values({
+        mobileno: mobile,
+        message: JSON.stringify(body),
+        created_on: getCurrentDateTime(),
+      })
+      .execute()
   } catch (err) {
-    throw new InternalServerErrorException('Failed to log OTP request', err)
+    console.error('❌ Failed to log OTP request:', err)
+    throw new InternalServerErrorException('Failed to log OTP request')
   }
 }
 
 /**
- * Saves OTP to `tbl_otpbox`
+ * Saves OTP into `tbl_otpbox`
  */
 export async function insertOtp(mobile: string, otp: number, createdOn: string): Promise<void> {
-  const sql = `
-    INSERT INTO tbl_otpbox (mobileno, otpnumber, created_on)
-    VALUES ($1, $2, $3)`
   try {
-    await (await dataSource).query(sql, [mobile, otp, createdOn])
+    const ds = await dataSource
+
+    await ds
+      .createQueryBuilder()
+      .insert()
+      .into('tbl_otpbox')
+      .values({
+        mobileno: mobile,
+        otpnumber: otp,
+        created_on: createdOn,
+      })
+      .execute()
   } catch (err) {
-    throw new InternalServerErrorException('Failed to save OTP', err.message)
+    console.error('❌ Error inserting OTP:', err)
+    throw new InternalServerErrorException('Failed to save OTP')
   }
 }
 
-
-
-
+/**
+ * Generates the next subscriber ID efficiently.
+ * Example: SG0001 → SG0002
+ */
 export async function getNextSubscriberID(): Promise<string> {
   const defaultID = 'SG0001'
 
   try {
-    const sql = `
-      SELECT subscriberid
-      FROM tbl_subscriber
-      WHERE isdelete = 0
-        AND subscriberid IS NOT NULL
-      ORDER BY id DESC
-      LIMIT 1
-    `
-    const [latest]: any = await (await dataSource).query(sql)
+    const ds = await dataSource
 
-    if (!latest || !latest.subscriberid) {
+    // Use a raw query for better performance instead of QueryBuilder chaining
+    const result = await ds.query(`
+      SELECT subscriberid 
+      FROM tbl_subscriber 
+      WHERE isdelete = 0 
+        AND subscriberid IS NOT NULL
+      ORDER BY id DESC 
+      LIMIT 1
+    `)
+
+    if (!result || result.length === 0 || !result[0].subscriberid) {
       return defaultID
     }
 
-    const numericPart = parseInt(latest.subscriberid.replace('SG', ''), 10)
+    // Extract numeric part and increment
+    const numericPart = parseInt(result[0].subscriberid.slice(2), 10)
     if (isNaN(numericPart)) {
       return defaultID
     }
 
     return `SG${String(numericPart + 1).padStart(4, '0')}`
-  } catch (error) {
-    console.error('Error generating subscriber ID:', error)
+  } catch (err) {
+    console.error('❌ Error generating subscriber ID:', err)
     return defaultID
   }
 }
-

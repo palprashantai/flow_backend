@@ -3,10 +3,10 @@ import { JwtService } from '@nestjs/jwt'
 
 import { JwtPayload } from './auth.interface'
 import { ConfigService } from '@nestjs/config'
-import { getNextSubscriberID } from './auth.repository'
+import { getNextSubscriberID, insertOtp, insertOtpLog } from './auth.repository'
 import { getCurrentDateTime, sanitize, sanitizeMobile } from 'helper'
 import { InjectRepository } from '@nestjs/typeorm'
-import { LogEntity, OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreation } from './auth.entity'
+import { OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreation } from './auth.entity'
 import { In, Not, Repository } from 'typeorm'
 import { RegisterDto } from './auth.dto'
 import { CommonService } from 'modules/common/common.service'
@@ -18,8 +18,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     public readonly configService: ConfigService,
     private readonly commonService: CommonService,
-    @InjectRepository(LogEntity)
-    private readonly logRepo: Repository<LogEntity>,
+
     @InjectRepository(OtpBoxEntity)
     private readonly otpRepo: Repository<OtpBoxEntity>,
     @InjectRepository(Subscriber)
@@ -52,15 +51,12 @@ export class AuthService {
   async getOtpNew(mobileNo: string, deviceId: string): Promise<void> {
     const sanitizedMobile = sanitizeMobile(mobileNo)
     const cleanDeviceId = deviceId || ''
-
     if (!mobileNo) {
       throw new BadRequestException('Mobile number is required')
     }
-
     if (!sanitizedMobile || sanitizedMobile.length !== 10) {
       throw new BadRequestException('Invalid mobile number format')
     }
-
     // Bypass check for test number
     if (sanitizedMobile !== '9999999999') {
       // ✅ Device ID validation
@@ -82,12 +78,12 @@ export class AuthService {
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
 
       // Insert logs & OTP
-      await this.logRepo.save(
-        this.logRepo.create({ mobileno: sanitizedMobile, message: JSON.stringify({ MobileNo: mobileNo, DeviceId: cleanDeviceId }) })
-      )
-
-      // Save OTP
-      await this.otpRepo.save(this.otpRepo.create({ mobileno: sanitizedMobile, otpnumber: otp.toString(), created_on: now }))
+      // Insert logs
+      await insertOtpLog(sanitizedMobile, {
+        MobileNo: mobileNo,
+        DeviceId: cleanDeviceId,
+      })
+      await insertOtp(sanitizedMobile, otp, now)
 
       // ✅ Send SMS
       const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yqoW/F5XuOH`
