@@ -1,19 +1,21 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { InjectRepository } from '@nestjs/typeorm'
+import { In, Not, Repository } from 'typeorm'
 
 import { JwtPayload } from './auth.interface'
 import { ConfigService } from '@nestjs/config'
-import { getNextSubscriberID, insertOtp, insertOtpLog } from './auth.repository'
+import { getNextSubscriberID, getUtmByDeviceId, insertOtp, insertOtpLog } from './auth.repository'
 import { getCurrentDateTime, sanitize, sanitizeMobile } from 'helper'
-import { InjectRepository } from '@nestjs/typeorm'
 import { OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreation } from './auth.entity'
-import { In, Not, Repository } from 'typeorm'
 import { RegisterDto } from './auth.dto'
 import { CommonService } from 'modules/common/common.service'
+import { logger } from 'middlewares/logger.middleware'
 
 @Injectable()
 export class AuthService {
-  logger: Logger
+  private readonly logger = logger
+
   constructor(
     private readonly jwtService: JwtService,
     public readonly configService: ConfigService,
@@ -51,24 +53,30 @@ export class AuthService {
   async getOtpNew(mobileNo: string, deviceId: string): Promise<void> {
     const sanitizedMobile = sanitizeMobile(mobileNo)
     const cleanDeviceId = deviceId || ''
+
     if (!mobileNo) {
+      this.logger.warn('Mobile number missing in getOtpNew')
       throw new BadRequestException('Mobile number is required')
     }
+
     if (!sanitizedMobile || sanitizedMobile.length !== 10) {
+      this.logger.warn(`Invalid mobile format: ${mobileNo}`)
       throw new BadRequestException('Invalid mobile number format')
     }
+
     // Bypass check for test number
     if (sanitizedMobile !== '9999999999') {
-      // ✅ Device ID validation
       if (cleanDeviceId) {
         const deviceCheck = await this.subscriberRepo.findOne({
           where: {
             deviceid: cleanDeviceId,
             isdelete: 0,
-            mobileno: Not(sanitizedMobile), // ensures mobile is NOT equal
+            mobileno: Not(sanitizedMobile),
           },
         })
+
         if (deviceCheck) {
+          this.logger.error(`Device already registered: ${cleanDeviceId}`)
           throw new ConflictException('This device is already registered with another number. Please login with that number')
         }
       }
@@ -77,21 +85,34 @@ export class AuthService {
       const otp = Math.floor(1000 + Math.random() * 9000)
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
 
-      // Insert logs & OTP
-      // Insert logs
+      this.logger.info(`Generated OTP ${otp} for mobile ${sanitizedMobile}`)
+
       await insertOtpLog(sanitizedMobile, {
         MobileNo: mobileNo,
         DeviceId: cleanDeviceId,
       })
+
       await insertOtp(sanitizedMobile, otp, now)
 
-      // ✅ Send SMS
       const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yqoW/F5XuOH`
-      console.log(message)
+      this.logger.debug(`Sending SMS to ${sanitizedMobile}: ${message}`)
       await this.commonService.sendSms(sanitizedMobile, message)
     }
   }
 
+  /**
+   * Verifies a subscriber's OTP, creates a new subscriber if needed,
+   * updates device info, logs activity, and returns a JWT.
+   *
+   * @param mobileNo - Subscriber's mobile number.
+   * @param deviceId - Device ID of the request.
+   * @param otp - OTP entered by the subscriber.
+   * @param fcmToken - FCM token for push notifications.
+   * @returns Object with usertype, JWT, and subscriber info.
+   *
+   * @throws BadRequestException if mobile or OTP is missing.
+   * @throws UnauthorizedException if OTP is invalid.
+   */
   async otpVerification(
     mobileNo: string,
     deviceId: string,
@@ -105,19 +126,17 @@ export class AuthService {
     const currentTime = getCurrentDateTime()
 
     if (!sanitizedMobile || !otp) {
+      this.logger.warn('OTP or Mobile number missing in otpVerification')
       throw new BadRequestException('Mobile number and OTP are required')
     }
 
-    // ✅ Check OTP validity
-    console.log(cleanOtp, sanitizedMobile)
     const otpResult = await this.otpRepo.findOne({
       where: { mobileno: sanitizedMobile },
       order: { id: 'DESC' },
     })
 
-    console.log(otpResult.otpnumber, cleanOtp)
-
     if (!otpResult || otpResult.otpnumber !== cleanOtp) {
+      this.logger.error(`Invalid OTP for ${sanitizedMobile}`)
       throw new UnauthorizedException('Invalid OTP')
     }
 
@@ -128,6 +147,9 @@ export class AuthService {
 
     let subscriberid: string
     let usertype = 0
+    const logEvent = await getUtmByDeviceId(cleanDeviceId)
+
+    console.log('logEvent', logEvent)
 
     if (!subscriber) {
       subscriberid = await getNextSubscriberID()
@@ -144,18 +166,32 @@ export class AuthService {
         token: cleanToken,
         created_on: currentTime,
         recent_contacted: currentTime,
+        utm_source: logEvent.utm_source || '',
+        utm_campaign: logEvent.utm_campaign || '',
+        utm_medium: logEvent.utm_medium || '',
       })
 
-      await this.subscriberRepo.save(subscriber)
+      const sub = await this.subscriberRepo.save(subscriber)
 
       await Promise.all([
+        await this.subscriberRecentRepo.save({
+          subscriberid: sub.id,
+          source: 'MobileApp',
+          lead_type: usertype, // 0 = old, 1 = new
+          lead_source: 'MobileApp',
+          created_on: new Date(),
+          utm_source: logEvent.utm_source || '',
+          utm_campaign: logEvent.utm_campaign || '',
+          utm_medium: logEvent.utm_medium || '',
+        }),
+
         // this.commonService.checkWorkFlowLeadCreation(subscriberid),
         // this.commonService.checkWorkflowSubscriberWorkflow(subscriberid, 'insert'),
       ])
 
       usertype = 1
+      this.logger.info(`New subscriber created: ${subscriberid}`)
     } else {
-      // 👉 Existing Subscriber
       const id = subscriber.id
 
       if (!subscriber.email) {
@@ -174,7 +210,12 @@ export class AuthService {
         lead_type: usertype, // 0 = old, 1 = new
         lead_source: 'MobileApp',
         created_on: new Date(),
+        utm_source: logEvent.utm_source || '',
+        utm_campaign: logEvent.utm_campaign || '',
+        utm_medium: logEvent.utm_medium || '',
       })
+
+      this.logger.info(`Existing subscriber logged in: ${subscriber.subscriberid}`)
     }
 
     const filteredSubscriber = {
@@ -187,10 +228,20 @@ export class AuthService {
       address: subscriber.address,
       state: subscriber.state,
     }
+
     const jwt = await this.generateToken(subscriber.id)
     return { usertype, jwt, subscriber: filteredSubscriber }
   }
 
+  /**
+   * Registers or updates a subscriber's name and email.
+   *
+   * @param dto - Registration DTO containing `name` and `email`.
+   * @param subscriberId - The ID of the subscriber to update.
+   * @returns The updated subscriber object with selected fields.
+   * @throws BadRequestException if name or email is missing.
+   * @throws NotFoundException if subscriber does not exist.
+   */
   async register(dto: RegisterDto, subscriberId: number) {
     const { name, email } = dto
 
@@ -224,6 +275,13 @@ export class AuthService {
     return updatedSubscriber
   }
 
+  /**
+   * Updates the user acceptance timestamp for a subscriber.
+   *
+   * @param subscriberId - The ID of the subscriber.
+   * @returns An object indicating success.
+   * @throws NotFoundException if subscriber does not exist.
+   */
   async userAcceptance(subscriberId: number) {
     // Fetch subscriber
     const subscriber = await this.subscriberRepo.findOne({
@@ -281,7 +339,6 @@ export class AuthService {
             .split(',')
             .map(Number)
             .filter((lang) => !isNaN(lang))
-
           if (userLangs.includes(langId)) {
             return user.id
           }
@@ -317,7 +374,7 @@ export class AuthService {
         updateData.allocation_list = newList.join(',')
       }
 
-      await this.workflowLeadCreationRepository.update(workflow.id, updateData)
+      this.logger.debug(`Assigned subscriber to user ${assignedTo}`)
     } catch (error) {
       this.logger.error(`Error in assignLeadSubscriber: ${error.message}`, error.stack)
     }

@@ -1,6 +1,7 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { INestApplication } from '@nestjs/common'
 import { AuthModule } from 'modules/auth/auth.module'
+import { SettingModule } from 'modules/setting/setting.module'
 
 export function setupSwagger(app: INestApplication) {
   const options = new DocumentBuilder()
@@ -24,11 +25,15 @@ export function setupSwagger(app: INestApplication) {
     .setTermsOfService('https://www.streetfolios.com/terms-of-service')
     .setContact('StreetFolios Support', 'https://www.streetfolios.com/support', 'support@streetfolios.com')
     .addTag('Authentication', 'User authentication and authorization')
+    .addTag('Setting', 'App setting')
+
     .build()
 
   const document = SwaggerModule.createDocument(app, options, {
     include: [
-      AuthModule
+      AuthModule,
+      SettingModule,
+
       // Add your actual modules here
       // AuthModule,
       // UserModule,

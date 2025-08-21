@@ -14,11 +14,20 @@ import { ConfigService } from '@nestjs/config'
 import { errors } from 'error'
 import { getUserBy } from './auth.repository'
 
+/**
+ * AuthGuard validates JWT from the Authorization header.
+ * - Checks for presence of 'Bearer' token.
+ * - Verifies the token using JWT_SECRET.
+ * - Attaches `user.id` to the request object.
+ *
+ * @throws HttpException(UNAUTHORIZED) if header is missing or token invalid.
+ * @throws HttpException(FORBIDDEN) if token format is invalid.
+ */
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -55,17 +64,21 @@ export class AuthGuard implements CanActivate {
       // ✅ Only attach user id
       return { id: decoded.id }
     } catch (error) {
-      throw errors.Logout
+      throw error
     }
   }
 }
 
-// ✅ Decorator to apply AuthGuard
+/**
+ * Decorator to apply AuthGuard to route handlers.
+ */
 export function Auth() {
   return applyDecorators(UseGuards(AuthGuard))
 }
 
-// ✅ Param decorator for user id
+/**
+ * Param decorator to extract authenticated user's ID from request.
+ */
 export const GetUserId = createParamDecorator((data, ctx: ExecutionContext): number => {
   const req = ctx.switchToHttp().getRequest()
   return req.user?.id

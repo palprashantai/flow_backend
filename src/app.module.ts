@@ -5,13 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 
-// import { dataSourceOptions } from '../ormconfig'
 import { HttpModule } from '@nestjs/axios'
 import { dataSourceOptions } from './databases/data-source'
 import { JwtModule } from '@nestjs/jwt'
 import { RateLimitMiddleware } from 'middlewares/rate-limit.middleware'
 import { AuthModule } from 'modules/auth/auth.module'
 import { CommonModule } from 'modules/common/common.module'
+import { SettingModule } from 'modules/setting/setting.module'
+import { CacheModule } from 'cache.module'
 
 @Module({
   imports: [
@@ -31,7 +32,9 @@ import { CommonModule } from 'modules/common/common.module'
     }),
     HttpModule,
     AuthModule,
+    SettingModule,
     CommonModule,
+    CacheModule
   ],
   controllers: [AppController],
   providers: [AppService],

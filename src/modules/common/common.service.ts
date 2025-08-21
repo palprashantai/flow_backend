@@ -11,6 +11,15 @@ export class CommonService {
     private configurationRepository: Repository<Configuration>
   ) {} // Inject
 
+  /**
+   * Sends an SMS message to a specified phone number using Kaleyra API.
+   * Formats Indian phone numbers, cleans the message text,
+   * fetches SMS configuration from the database, and handles errors.
+   *
+   * @param sendto - The recipient phone number (10 or 11 digits).
+   * @param message - The SMS content to be sent.
+   * @returns void
+   */
   async sendSms(sendto: string, message: string): Promise<void> {
     try {
       // Format phone number

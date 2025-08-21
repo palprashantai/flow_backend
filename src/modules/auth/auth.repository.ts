@@ -2,9 +2,13 @@ import { dataSource } from 'databases/data-source'
 import { getCurrentDateTime, getManyBy, getSingleBy } from '../../helper'
 import { Subscriber } from './auth.entity'
 import { InternalServerErrorException } from '@nestjs/common'
+import { logger as logger } from 'middlewares/logger.middleware'
+
 
 export const getUserBy = getSingleBy(Subscriber)
 export const getUsersBy = getManyBy(Subscriber)
+
+
 
 /**
  * Logs OTP request data into `tbl_log3`
@@ -24,7 +28,7 @@ export async function insertOtpLog(mobile: string, body: any): Promise<void> {
       })
       .execute()
   } catch (err) {
-    console.error('❌ Failed to log OTP request:', err)
+    logger.error('❌ Failed to log OTP request:', err)
     throw new InternalServerErrorException('Failed to log OTP request')
   }
 }
@@ -47,7 +51,7 @@ export async function insertOtp(mobile: string, otp: number, createdOn: string):
       })
       .execute()
   } catch (err) {
-    console.error('❌ Error inserting OTP:', err)
+    logger.error('❌ Error inserting OTP:', err)
     throw new InternalServerErrorException('Failed to save OTP')
   }
 }
@@ -84,7 +88,45 @@ export async function getNextSubscriberID(): Promise<string> {
 
     return `SG${String(numericPart + 1).padStart(4, '0')}`
   } catch (err) {
-    console.error('❌ Error generating subscriber ID:', err)
+    logger.error('❌ Error generating subscriber ID:', err)
     return defaultID
+  }
+}
+
+export async function getUtmByDeviceId(deviceId: string) {
+  try {
+    const ds = await dataSource
+
+    const record = await ds
+      .createQueryBuilder()
+      .select('payload')
+      .from('tbl_log_appevents', 'e')
+      .where('device_id = :deviceId', { deviceId })
+      .andWhere('event_type = "app_install_attributes"')
+      .orderBy('created_on', 'DESC')
+      .getRawOne<{ payload: string }>()
+
+    if (!record?.payload) return {}
+
+    let payload: any
+    try {
+      payload = JSON.parse(record.payload)
+    } catch (err) {
+      logger.warn('⚠️ Invalid JSON in payload, returning empty object')
+      return {}
+    }
+
+    const referrer: string = payload.installReferrer
+    if (!referrer) return {}
+
+    const params = new URLSearchParams(referrer)
+    const utm_source = params.get('utm_source') || ''
+    const utm_campaign = params.get('utm_campaign') || ''
+    const utm_medium = params.get('utm_medium') || ''
+
+    return { utm_source, utm_campaign, utm_medium }
+  } catch (err) {
+    logger.error('❌ Error fetching UTM data:', err)
+    throw new InternalServerErrorException('Failed to fetch UTM data', (err as Error).message)
   }
 }
