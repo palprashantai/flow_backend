@@ -13,6 +13,7 @@ import { AuthModule } from 'modules/auth/auth.module'
 import { CommonModule } from 'modules/common/common.module'
 import { SettingModule } from 'modules/setting/setting.module'
 import { CacheModule } from 'cache.module'
+import { PortfolioModule } from 'modules/portfolio/portfolio.module'
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { CacheModule } from 'cache.module'
     AuthModule,
     SettingModule,
     CommonModule,
-    CacheModule
+    PortfolioModule,
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],

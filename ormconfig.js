@@ -12,18 +12,15 @@ const dataSource = new DataSource({
   entities: ['./src/modules/**/*.entity{.ts,.js}'],
   migrations: ['./src/*-migrations*{.ts,.js}'],
   synchronize: false,
-  // MySQL specific options
   charset: 'utf8mb4',
   timezone: '+00:00',
-  // CLI configuration for migrations
   cli: {
     migrationsDir: 'src/migrations',
   },
-  // Additional MySQL connection options
   extra: {
     connectionLimit: 10,
-    acquireTimeout: 60000,
-    timeout: 60000,
+    connectTimeout: 30000, // 30 seconds handshake timeout
+    acquireTimeout: 60000,  // optional, max wait for free connection
   },
 })
 
