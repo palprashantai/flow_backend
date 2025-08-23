@@ -14,6 +14,8 @@ import { CommonModule } from 'modules/common/common.module'
 import { SettingModule } from 'modules/setting/setting.module'
 import { CacheModule } from 'cache.module'
 import { PortfolioModule } from 'modules/portfolio/portfolio.module'
+import { UserModule } from 'modules/user/user.module'
+import { SmallcaseModule } from 'modules/payment/payment.module'
 
 @Module({
   imports: [
@@ -33,9 +35,11 @@ import { PortfolioModule } from 'modules/portfolio/portfolio.module'
     }),
     HttpModule,
     AuthModule,
+    UserModule,
     SettingModule,
     CommonModule,
     PortfolioModule,
+    SmallcaseModule,
     CacheModule,
   ],
   controllers: [AppController],

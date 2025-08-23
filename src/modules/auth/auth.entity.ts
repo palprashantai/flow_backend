@@ -5,6 +5,9 @@ export class Subscriber {
   @PrimaryGeneratedColumn()
   id: number
 
+  @Column({ type: 'int', default: 0 })
+  authid: number
+
   @Column({ type: 'varchar', length: 50, nullable: true })
   subscriberid: string
 

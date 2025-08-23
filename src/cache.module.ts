@@ -1,7 +1,7 @@
 // src/common/cache/cache.module.ts
 import { Module, Global } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import * as NodeCache from 'node-cache'
+import  NodeCache from 'node-cache'
 
 @Global()
 @Module({

@@ -2,7 +2,6 @@ import { dataSource } from 'databases/data-source'
 import { DateTime } from 'luxon'
 import { EntitySchema, ObjectType } from 'typeorm'
 
-
 export function getSingleBy<T = any>(
   table: ObjectType<T> | EntitySchema<T>
 ): (filter: Partial<T>, columns?: any[], sortings?) => Promise<T> {
@@ -54,10 +53,28 @@ export function sanitizeEmail(str: string): string {
   return str?.trim().replace(/[^\w.@+-]/g, '') || ''
 }
 
-
 export function getCurrentDateTime() {
   // return new Date().toISOString().slice(0, 19).replace('T', ' ')
-  return DateTime.now()
-    .setZone('Asia/Kolkata')
-    .toFormat('yyyy-MM-dd HH:mm:ss');
+  return DateTime.now().setZone('Asia/Kolkata').toFormat('yyyy-MM-dd HH:mm:ss')
+}
+
+export function checkExpiryDate(date: any): string {
+  console.log('checkExpiryDate:', date)
+  if (
+    date === '0000-00-00' ||
+    date === '' ||
+    date == '1899-11-29T18:38:50.000Z' ||
+    date === null ||
+    date === 'NULL' ||
+    date === undefined
+  ) {
+    return ''
+  } else {
+    return date
+  }
+}
+
+export function getFormattedDate(activation_date: any): string {
+  // return new Date().toISOString().slice(0, 19).replace('T', ' ')
+  return DateTime.fromSQL(activation_date, { zone: 'Asia/Kolkata' }).toFormat('yyyy-MM-dd')
 }

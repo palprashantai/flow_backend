@@ -1,5 +1,5 @@
 // dto/create-ticket.dto.ts
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator'
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform, Type } from 'class-transformer'
 
@@ -62,6 +62,20 @@ export class FilterPortfolioDto {
   @IsOptional()
   @IsString()
   search?: string
+
+  @ApiPropertyOptional({ description: 'Search by service name or description' })
+  @IsOptional()
+  @IsString()
+  userType?: string
+
+  @ApiPropertyOptional({
+    description: 'Whether to filter by latest rebalance',
+    type: Boolean,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true')
+  latest_rebalance?: boolean // internal use only, not exposed via API
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()

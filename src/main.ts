@@ -2,10 +2,10 @@ import { NestFactory } from '@nestjs/core'
 import { ExpressAdapter, NestExpressApplication } from '@nestjs/platform-express'
 import { ValidationPipe, Logger } from '@nestjs/common'
 import * as path from 'path'
-import * as compression from 'compression'
-import * as basicAuth from 'express-basic-auth'
+import compression from 'compression'
+import basicAuth from 'express-basic-auth'
 import helmet from 'helmet' // ✅ Fixed import
-import * as morgan from 'morgan'
+import morgan from 'morgan'
 
 import { AppModule } from './app.module'
 import { setupSwagger } from './swagger'

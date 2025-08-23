@@ -1,4 +1,4 @@
-import {  Controller, Get, Query } from '@nestjs/common'
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common'
 import { PortfolioService } from './portfolio.service'
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
@@ -32,18 +32,18 @@ export class PortfolioController {
     return this.portfolioService.getFilteredPortfolios(filterDto, userId)
   }
 
-  // @Get('details')
-  // // @ApiBearerAuth()
-  // @ApiOperation({ summary: 'Get service portfolio details by slug' })
-  // @ApiQuery({ name: 'slug', required: true, type: String })
-  // @ApiResponse({ status: 200, description: 'Service portfolio details returned successfully' })
-  // @ApiResponse({ status: 400, description: 'Slug is missing' })
-  // @ApiResponse({ status: 404, description: 'Service not found' })
-  // async getServicePortfolio(@Query('slug') slug: string, @GetUserId('id') userId?: number) {
-  //   if (!slug) {
-  //     throw new BadRequestException('Slug parameter is required')
-  //   }
-
-  //   return await this.portfolioService.getServicePortfolio(slug, userId)
-  // }
+  @Get('details')
+  @ApiBearerAuth()
+  @Auth()
+  @ApiOperation({ summary: 'Get service portfolio details by slug' })
+  @ApiQuery({ name: 'slug', required: true, type: String })
+  @ApiResponse({ status: 200, description: 'Service portfolio details returned successfully' })
+  @ApiResponse({ status: 400, description: 'Slug is missing' })
+  @ApiResponse({ status: 404, description: 'Service not found' })
+  async getServicePortfolio(@Query('slug') slug: string, @GetUserId('id') userId?: number) {
+    if (!slug) {
+      throw new BadRequestException('Slug parameter is required')
+    }
+    return await this.portfolioService.getServicePortfolio(slug, userId)
+  }
 }

@@ -11,6 +11,51 @@ function sanitizeDescription(text: string | null): string {
   return text.replace(/<\/?[^>]+(>|$)/g, '').trim() // strip HTML if needed
 }
 
+export async function getUserType(userId?: number) {
+  try {
+    if (!userId) {
+      return {
+        userType: 'first_time',
+        hasActiveSubscription: false,
+        hasExpiredSubscription: false,
+      }
+    }
+
+    const ds = await dataSource
+
+    const subscriptions = await ds
+      .createQueryBuilder()
+      .select([
+        'COUNT(CASE WHEN expiry_date > NOW() THEN 1 END) AS activeCount',
+        'COUNT(CASE WHEN expiry_date <= NOW() THEN 1 END) AS expiredCount',
+      ])
+      .from('tbl_subscription', 'us')
+      .where('us.subscriberid = :userId', { userId })
+      .getRawOne()
+
+    const hasActiveSubscription = parseInt(subscriptions.activeCount) > 0
+    const hasExpiredSubscription = parseInt(subscriptions.expiredCount) > 0
+
+    let userType: 'first_time' | 'subscriber' | 'expired'
+    if (hasActiveSubscription) {
+      userType = 'subscriber'
+    } else if (hasExpiredSubscription) {
+      userType = 'expired'
+    } else {
+      userType = 'first_time'
+    }
+
+    return {
+      userType,
+      hasActiveSubscription,
+      hasExpiredSubscription,
+    }
+  } catch (error) {
+    logger.error('🔴 Error in getUserStatus:', error)
+    throw new InternalServerErrorException('Failed to fetch user status')
+  }
+}
+
 // 🔹 Market data
 export async function getMarketToday() {
   try {
@@ -222,13 +267,123 @@ export async function getAllInsight(): Promise<any[]> {
  * @returns {Promise<any[]>} A list of filtered portfolios.
  * @throws {InternalServerErrorException} If the query fails.
  */
+// export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userId?: number) {
+//   try {
+//     const ds = await dataSource
+
+//     const { search, page = 1, limit = 10, subscriptionType, investmentAmount, returns, cagr, volatility, investmentStrategy } = filterDto
+
+//     const baseSelect = [
+//       's.id AS id',
+//       's.service_name AS name',
+//       's.volatility AS volatility',
+//       's.service_slug AS serviceSlug',
+//       's.service_image AS serviceImage',
+//       's.description AS description',
+//       's.traderisk AS riskTag',
+//       's.cagr AS returnValue',
+//       's.min_investment AS minInvestment',
+//       's.subscription_count AS peopleInvestedLast30Days',
+//       's.updated_on AS lastUpdated',
+//       's.access_price AS getAccessPrice',
+//       's.is_free AS isFree',
+//     ]
+
+//     if (userId) {
+//       baseSelect.push(
+//         `CASE WHEN us.id IS NOT NULL AND us.expiry_date > NOW() THEN 1 ELSE 0 END AS subscriptionActive`,
+//         `CASE WHEN us.id IS NOT NULL AND us.expiry_date <= NOW() THEN 1 ELSE 0 END AS subscriptionExpired`
+//       )
+//     }
+
+//     let query = ds
+//       .createQueryBuilder()
+//       .select(baseSelect)
+//       .from('tbl_services', 's')
+//       .where('s.isdelete = 0 AND s.service_type = 1 AND s.activate = 1')
+
+//     if (userId) {
+//       query.leftJoin('tbl_subscription', 'us', 'us.serviceid = s.id AND us.subscriberid = :userId', { userId })
+//     }
+
+//     // === Filters ===
+//     if (search) {
+//       query.andWhere('(s.service_name LIKE :search OR s.description LIKE :search)', {
+//         search: `%${search}%`,
+//       })
+//     }
+
+//     if (subscriptionType?.length) {
+//       if (subscriptionType.includes('Free')) query.andWhere('s.is_free = 1')
+//       if (subscriptionType.includes('Paid')) query.andWhere('s.is_free = 0')
+//     }
+
+//     if (volatility?.length) {
+//       query.andWhere('s.volatility IN (:...volatility)', { volatility })
+//     }
+
+//     if (investmentStrategy?.length) {
+//       query.innerJoin('tbl_service_segment', 'ss', 'ss.serviceid = s.id')
+//       query.andWhere('ss.segmentid IN (:...investmentStrategy)', { investmentStrategy })
+//     }
+
+//     if (returns?.length) {
+//       query.andWhere('s.investment_period IN (:...returns)', { returns })
+//     }
+
+//     // Sorting filters
+//     if (cagr?.includes('HighToLow')) query.orderBy('s.cagr', 'DESC')
+//     else if (cagr?.includes('LowToHigh')) query.orderBy('s.cagr', 'ASC')
+
+//     if (investmentAmount?.includes('LowToHigh')) query.orderBy('s.min_investment', 'ASC')
+//     else if (investmentAmount?.includes('HighToLow')) query.orderBy('s.min_investment', 'DESC')
+
+//     // Pagination
+//     query.skip((page - 1) * limit).take(limit)
+
+//     const rows = await query.getRawMany()
+
+//     // === Transformer ===
+//     return rows.map((item: any) => ({
+//       id: item.id,
+//       name: item.name,
+//       volatility: item.volatility,
+//       serviceSlug: item.serviceSlug,
+//       serviceImage: item.serviceImage,
+//       description: item.description,
+//       riskTag: item.riskTag,
+//       return: { period: '1Y CAGR', value: parseFloat(item.returnValue || 0) },
+//       minInvestment: parseInt(item.minInvestment || 0),
+//       peopleInvestedLast30Days: parseInt(item.peopleInvestedLast30Days || 0),
+//       lastUpdated: new Date(item.lastUpdated),
+//       getAccessPrice: item.getAccessPrice ? parseFloat(item.getAccessPrice) : undefined,
+//       isFree: Boolean(item.isFree),
+//       subscriptionActive: Boolean(item.subscriptionActive),
+//       subscriptionExpired: Boolean(item.subscriptionExpired),
+//     }))
+//   } catch (error) {
+//     logger.error('🔴 Error in getFilteredPortfolios:', error)
+//     throw new InternalServerErrorException('Failed to fetch portfolios')
+//   }
+// }
+
 export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userId?: number) {
   try {
     const ds = await dataSource
+    const {
+      search,
+      page = 1,
+      limit = 10,
+      subscriptionType,
+      investmentAmount,
+      returns,
+      cagr,
+      volatility,
+      investmentStrategy,
+      userType,
+      latest_rebalance,
+    } = filterDto
 
-    const { search, page = 1, limit = 10, subscriptionType, investmentAmount, returns, cagr, volatility, investmentStrategy } = filterDto
-
-    // === Base Select ===
     const baseSelect = [
       's.id AS id',
       's.service_name AS name',
@@ -245,62 +400,117 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
       's.is_free AS isFree',
     ]
 
-    if (userId) {
-      baseSelect.push(
-        `CASE WHEN us.id IS NOT NULL AND us.expiry_date > NOW() THEN 1 ELSE 0 END AS subscriptionActive`,
-        `CASE WHEN us.id IS NOT NULL AND us.expiry_date <= NOW() THEN 1 ELSE 0 END AS subscriptionExpired`
-      )
-    }
-
+    // ✅ Declare query FIRST
     let query = ds
       .createQueryBuilder()
       .select(baseSelect)
       .from('tbl_services', 's')
       .where('s.isdelete = 0 AND s.service_type = 1 AND s.activate = 1')
 
-    if (userId) {
+    // ✅ Add JOIN and subscription fields conditionally
+    if (userId && userType && userType !== 'first_time') {
       query.leftJoin('tbl_subscription', 'us', 'us.serviceid = s.id AND us.subscriberid = :userId', { userId })
+
+      baseSelect.push(
+        `CASE WHEN us.id IS NOT NULL AND us.expiry_date > NOW() THEN 1 ELSE 0 END AS subscriptionActive`,
+        `CASE WHEN us.id IS NOT NULL AND us.expiry_date <= NOW() THEN 1 ELSE 0 END AS subscriptionExpired`
+      )
     }
 
-    // === Filters ===
+    // === UserType filters
+    if (userId && userType) {
+      switch (userType) {
+        case 'subscriber':
+          query.andWhere('us.expiry_date > NOW()')
+          break
+        case 'expired':
+          query.andWhere('us.expiry_date <= NOW() AND us.id IS NOT NULL')
+          break
+        case 'first_time':
+          query.orderBy('s.subscription_count', 'DESC').limit(5)
+          break
+      }
+    }
+
+    // === Search
     if (search) {
       query.andWhere('(s.service_name LIKE :search OR s.description LIKE :search)', {
         search: `%${search}%`,
       })
     }
 
+    // === Latest Rebalance
+    if (latest_rebalance) {
+      query.andWhere('s.last_rebalance_date IS NOT NULL')
+      query.orderBy('s.last_rebalance_date', 'DESC').limit(5)
+    }
+
+    // === Subscription Type
     if (subscriptionType?.length) {
-      if (subscriptionType.includes('Free')) query.andWhere('s.is_free = 1')
-      if (subscriptionType.includes('Paid')) query.andWhere('s.is_free = 0')
+      const subs = []
+      if (subscriptionType.includes('Free')) subs.push('s.is_free = 1')
+      if (subscriptionType.includes('Paid')) subs.push('s.is_free = 0')
+      if (subs.length) query.andWhere(`(${subs.join(' OR ')})`)
     }
 
-    if (volatility?.length) {
-      query.andWhere('s.volatility IN (:...volatility)', { volatility })
-    }
+    // === Volatility
+    if (volatility?.length) query.andWhere('s.volatility IN (:...volatility)', { volatility })
 
+    // === Investment Strategy
     if (investmentStrategy?.length) {
       query.innerJoin('tbl_service_segment', 'ss', 'ss.serviceid = s.id')
       query.andWhere('ss.segmentid IN (:...investmentStrategy)', { investmentStrategy })
     }
 
-    if (returns?.length) {
-      query.andWhere('s.investment_period IN (:...returns)', { returns })
+    // === Returns
+    if (returns?.length) query.andWhere('s.investment_period IN (:...returns)', { returns })
+
+    // === Sorting
+    if (!latest_rebalance && !userType?.includes('first_time')) {
+      if (cagr?.includes('HighToLow')) query.addOrderBy('s.cagr', 'DESC')
+      else if (cagr?.includes('LowToHigh')) query.addOrderBy('s.cagr', 'ASC')
+
+      if (investmentAmount?.includes('LowToHigh')) query.addOrderBy('s.min_investment', 'ASC')
+      else if (investmentAmount?.includes('HighToLow')) query.addOrderBy('s.min_investment', 'DESC')
+
+      if (!cagr?.length && !investmentAmount?.length) query.addOrderBy('s.updated_on', 'DESC')
     }
 
-    // Sorting filters
-    if (cagr?.includes('HighToLow')) query.orderBy('s.cagr', 'DESC')
-    else if (cagr?.includes('LowToHigh')) query.orderBy('s.cagr', 'ASC')
-
-    if (investmentAmount?.includes('LowToHigh')) query.orderBy('s.min_investment', 'ASC')
-    else if (investmentAmount?.includes('HighToLow')) query.orderBy('s.min_investment', 'DESC')
-
-    // Pagination
+    // === Pagination
     query.skip((page - 1) * limit).take(limit)
 
     const rows = await query.getRawMany()
 
-    // === Transformer ===
-    return rows.map((item: any) => ({
+    // === Count Query
+    const countQuery = ds
+      .createQueryBuilder()
+      .from('tbl_services', 's')
+      .select('COUNT(DISTINCT s.id)', 'total')
+      .where('s.isdelete = 0 AND s.service_type = 1 AND s.activate = 1')
+
+    if (search) {
+      countQuery.andWhere('(s.service_name LIKE :search OR s.description LIKE :search)', {
+        search: `%${search}%`,
+      })
+    }
+    if (volatility?.length) countQuery.andWhere('s.volatility IN (:...volatility)', { volatility })
+    if (investmentStrategy?.length) {
+      countQuery.innerJoin('tbl_service_segment', 'ss', 'ss.serviceid = s.id')
+      countQuery.andWhere('ss.segmentid IN (:...investmentStrategy)', { investmentStrategy })
+    }
+    if (returns?.length) countQuery.andWhere('s.investment_period IN (:...returns)', { returns })
+    if (subscriptionType?.length) {
+      const subs = []
+      if (subscriptionType.includes('Free')) subs.push('s.is_free = 1')
+      if (subscriptionType.includes('Paid')) subs.push('s.is_free = 0')
+      if (subs.length) countQuery.andWhere(`(${subs.join(' OR ')})`)
+    }
+
+    const totalResult = await countQuery.getRawOne()
+    const total = parseInt(totalResult?.total || 0, 10)
+
+    // === Transform
+    const portfolios = rows.map((item: any) => ({
       id: item.id,
       name: item.name,
       volatility: item.volatility,
@@ -313,10 +523,23 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
       peopleInvestedLast30Days: parseInt(item.peopleInvestedLast30Days || 0),
       lastUpdated: new Date(item.lastUpdated),
       getAccessPrice: item.getAccessPrice ? parseFloat(item.getAccessPrice) : undefined,
-      isFree: Boolean(item.isFree),
-      subscriptionActive: Boolean(item.subscriptionActive),
-      subscriptionExpired: Boolean(item.subscriptionExpired),
+      isFree: item.isFree === 1,
+      subscriptionActive: item.subscriptionActive === 1,
+      subscriptionExpired: item.subscriptionExpired === 1,
     }))
+
+    return {
+      portfolios,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
+      userType: userType || (userId ? 'first_time' : null),
+    }
   } catch (error) {
     logger.error('🔴 Error in getFilteredPortfolios:', error)
     throw new InternalServerErrorException('Failed to fetch portfolios')
@@ -432,6 +655,3 @@ export async function getAvailableDurationsForPortfolio(serviceId: number): Prom
     throw new InternalServerErrorException('Failed to fetch available durations')
   }
 }
-
-
-
