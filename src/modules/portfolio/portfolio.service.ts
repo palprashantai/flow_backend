@@ -7,7 +7,6 @@ import {
   getAvailableFiltersForPortfolio,
   getFilteredPortfolios,
   getMarketToday,
-  getStreetFolios,
   getUserType,
 } from './portfolio.reposistory'
 import { logger } from 'middlewares/logger.middleware'
@@ -21,26 +20,20 @@ export class PortfolioService {
   private readonly logger = logger
 
   constructor(private readonly portfolioDetailReposistory: PortfolioDetailReposistory) {}
-
+  
   async getHomeData(userId: number): Promise<any> {
     try {
-      const results = await Promise.allSettled([getMarketToday(), getUserType(userId), getStreetFolios(userId), getAllInsight()])
-
-      // Extract results safely
-      const [marketTodayResult, streetFoliosResult, allInsightResult] = results
+      const [marketTodayResult, userTypeResult, allInsightResult] = await Promise.allSettled([
+        getMarketToday(),
+        getUserType(userId),
+        getAllInsight(),
+      ])
 
       const marketToday = marketTodayResult.status === 'fulfilled' ? marketTodayResult.value : []
-      const streetFolios = streetFoliosResult.status === 'fulfilled' ? streetFoliosResult.value : []
+      const userType = userTypeResult.status === 'fulfilled' ? userTypeResult.value : null
       const allInsights = allInsightResult.status === 'fulfilled' ? allInsightResult.value : []
-      const userType = streetFoliosResult.status === 'fulfilled' ? streetFoliosResult.value : []
 
-      return {
-        marketToday,
-        userType,
-        streetFolios,
-        allInsights,
-        // add other results here when you add more calls
-      }
+      return { marketToday, userType, allInsights }
     } catch (error) {
       this.logger.error('Home data fetch error:', error)
       throw new InternalServerErrorException('Failed to fetch home data')

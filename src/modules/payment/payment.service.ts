@@ -691,7 +691,7 @@ export class PaymentService {
               .update('tbl_subscriber')
               .set({
                 // balance: () => 'balance + 20',
-                verifiedon: today,
+                verifykycon: today,
               })
               .where('id = :userId', { userId })
               .execute()
@@ -719,7 +719,7 @@ export class PaymentService {
         .update('tbl_subscriber')
         .set({
           // balance: () => 'balance + 20',
-          verifiedon: today,
+          verifykycon: today,
         })
         .where('id = :userId', { userId })
         .execute()
