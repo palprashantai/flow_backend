@@ -310,7 +310,10 @@ export async function getAvailableFiltersForPortfolio(): Promise<Record<string, 
       .createQueryBuilder()
       .select(['seg.id AS id', 'seg.segment_name AS name'])
       .from('tbl_segment', 'seg')
+      .innerJoin('tbl_services', 'srv', 'srv.segid = seg.id')
       .where('seg.segment_name IS NOT NULL AND seg.segment_name != ""')
+      .andWhere('srv.service_type = 1')
+      .groupBy('seg.id')
       .getRawMany()
 
     const returnsRows = await ds

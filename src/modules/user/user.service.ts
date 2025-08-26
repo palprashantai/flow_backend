@@ -1,5 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
-
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { logger } from 'middlewares/logger.middleware'
 import { getUserBy } from 'modules/auth/auth.repository'
 import moment from 'moment'
@@ -8,24 +7,20 @@ import {
   findSubscriberBillingDetails,
   findSubscriberWithDoc,
   getGeneralPushNotifications,
-  getLangList,
-  getParentList,
   getPortfolioCount,
   getPushNotifications,
   getStateList,
   getSubscriberDetails,
-  getSubscriberNotificationsStats,
   getSubscriberOrders,
   getSubscriberSubscriptions,
   getSubscriptionDetails,
-  getSubscriptionList,
   insertSubscriberDocument,
   updateEmail,
   updateSubscriberDocument,
   updateSubscriberState,
 } from './user.reposistory'
 import { UpdateSubscriberBillingDetailsDto, UpdateSubscriberEmailDto } from './user.dto'
-import { checkExpiryDate, getFormattedDate } from 'helper'
+import { checkExpiryDate } from 'helper'
 import NodeCache from 'node-cache'
 
 @Injectable()
@@ -50,52 +45,54 @@ export class UserService {
       if (!subscriber) throw new NotFoundException('Subscriber not found')
 
       // 3. Fetch subscriptions with service info
-      const subscriptions = await getSubscriptionList(subscriberid)
+      // const subscriptions = await getSubscriptionList(subscriberid)
 
-      const parentIds = subscriptions.filter((s) => s.parentid && s.parentid !== 0 && s.serviceid > 12).map((s) => s.parentid)
+      // const parentIds = subscriptions.filter((s) => s.parentid && s.parentid !== 0 && s.serviceid > 12).map((s) => s.parentid)
 
-      let parentNames: Record<number, string> = {}
-      if (parentIds.length > 0) {
-        const parents = await getParentList(parentIds)
+      // let parentNames: Record<number, string> = {}
+      // if (parentIds.length > 0) {
+      //   const parents = await getParentList(parentIds)
 
-        parentNames = parents.reduce((acc, p) => {
-          acc[p.id] = p.service_name
-          return acc
-        }, {})
-      }
+      //   parentNames = parents.reduce((acc, p) => {
+      //     acc[p.id] = p.service_name
+      //     return acc
+      //   }, {})
+      // }
 
-      const suparray = subscriptions.map((sub) => ({
-        service:
-          sub.parentid && sub.parentid !== 0 && sub.serviceid > 12 ? parentNames[sub.parentid] || sub.service_name : sub.service_name,
-        stype: sub.stype === 'Paid' ? 'Paid' : 'Free',
-        status: sub.status,
-        spackno: sub.subscriptionid,
-        purchase_date: sub.created_on ? new Date(sub.created_on).toISOString().split('T')[0] : null,
-        amount: sub.amount ?? 0,
-        used: sub.trades_available ?? 0,
-        totalcredits: sub.trades_total ?? 0,
-      }))
+      // const suparray = subscriptions.map((sub) => ({
+      //   service:
+      //     sub.parentid && sub.parentid !== 0 && sub.serviceid > 12 ? parentNames[sub.parentid] || sub.service_name : sub.service_name,
+      //   stype: sub.stype === 'Paid' ? 'Paid' : 'Free',
+      //   status: sub.status,
+      //   spackno: sub.subscriptionid,
+      //   purchase_date: sub.created_on ? new Date(sub.created_on).toISOString().split('T')[0] : null,
+      //   amount: sub.amount ?? 0,
+      //   used: sub.trades_available ?? 0,
+      //   totalcredits: sub.trades_total ?? 0,
+      // }))
 
       // 4. Fetch languages and states
-      const [languages, states] = await Promise.all([getLangList(), getStateList()])
+      // const [languages, states] = await Promise.all([getLangList(), getStateList()])
 
       const profileResponse = {
+        subscriberid: subscriber.subscriberid ?? '',
         fullname: subscriber.fullname ?? '',
         mobileno: subscriber.mobileno ?? '',
         emailid: subscriber.email ?? '',
         language: subscriber.language ?? '',
         address: subscriber.address ?? '',
         state: subscriber.state ?? '',
-        subscription: suparray,
-        subscriberno: subscriber.subscriberid?.replace('SG', '') ?? '',
+
+        // subscription: suparray,
+        // subscriberno: subscriber.subscriberid?.replace('SG', '') ?? '',
       }
 
       return {
         success: true,
         message: 'Profile retrieved successfully',
         result: [profileResponse],
-        languages,
-        states,
+        // languages,
+        // states,
       }
     } catch (error) {
       this.logger.error('Error in getProfile:', error)
@@ -182,7 +179,7 @@ export class UserService {
 
       const subscriptionDetails = await Promise.all(
         subscriptions.map(async (sub) => {
-          const perf = await getSubscriberNotificationsStats(sub.serviceid, sub.activation_date)
+          // const perf = await getSubscriberNotificationsStats(sub.serviceid, sub.activation_date)
           let stocksCountPromise: Promise<{ rtot: number }> = Promise.resolve({ rtot: 0 })
 
           if (sub.plantype === 1) {
@@ -191,73 +188,36 @@ export class UserService {
 
           const stocksCount = await stocksCountPromise
 
-          const rtot = Number(perf.rtot) || 0
-          const ptot = Number(perf.ptot) || 0
-          const ntot = Number(perf.ntot) || 0
-          const tprof = Number(perf.tprof) || 0
-          const tloss = Number(perf.tloss) || 0
-
-          const netProfit = rtot !== 0 ? ((tprof + tloss) / rtot).toFixed(2) : '0'
-          const accuracy = rtot !== 0 ? ((ptot / rtot) * 100).toFixed(2) : '0'
           const statusColor = sub.status === 'Active' ? '#16B24B' : '#FF4444'
 
-          if (sub.plantype === 0) {
-            return {
-              id: sub.id,
-              image: sub.service_image,
-              slug: sub.service_slug,
-              subscription_id: sub.subscriptionid,
-              name: sub.service_name,
-              subscription_date: sub.activation_date,
-              plantype: sub.plantype,
-              status: sub.status,
-              expiry_date: checkExpiryDate(sub.expiry_date),
-              status_color: statusColor,
-              startDate: sub.activation_date || '',
-              creditBalance: sub.trades_total,
-              creditTotal: sub.trades_used,
-              totalCalls: rtot,
-              profileCalls: tprof,
-              totalProfit: ptot,
-              totalLoss: tloss,
-              lossCalls: ntot,
-              netProfile: netProfit,
-              accuracy,
-              isFree: sub.stype,
-              is_renew: sub.trades_total < 5,
-              rebalance_frequency: sub.rebalance_frequency,
-              activation_date: sub.activation_date,
-            }
-          } else if (sub.plantype === 1) {
-            const daysLeft = sub.expiry_date ? Math.ceil((new Date(sub.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
+          const daysLeft = sub.expiry_date ? Math.ceil((new Date(sub.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
 
-            return {
-              id: sub.id,
-              image: sub.service_image,
-              slug: sub.service_slug,
-              subscription_id: sub.subscriptionid,
-              name: sub.service_name,
-              subscription_date: sub.activation_date,
-              plantype: sub.plantype,
-              status: sub.status,
-              expiry_date: checkExpiryDate(sub.expiry_date),
-              status_color: statusColor,
-              startDate: sub.activation_date || '',
-              plan: `${sub.trades_total} Month${sub.trades_total > 1 ? 's' : ''}`,
-              current_value: 0,
-              total_investment: 0,
-              current_returns: 0,
-              total_returns: 0,
-              total_stocks: stocksCount?.rtot || 0, // Consider replacing with actual count if needed
-              last_rebalance: sub.last_rebalance_date,
-              next_rebalance: sub.next_rebalance_date,
-              is_renew: daysLeft !== null && daysLeft <= 5,
-              rebalance_frequency: sub.rebalance_frequency,
-              activation_date: sub.activation_date,
-            }
+          return {
+            id: sub.id,
+            image: sub.service_image,
+            slug: sub.service_slug,
+            subscription_id: sub.subscriptionid,
+            name: sub.service_name,
+            subscription_date: sub.activation_date,
+            plantype: sub.plantype,
+            status: sub.status,
+            expiry_date: checkExpiryDate(sub.expiry_date),
+            status_color: statusColor,
+            startDate: sub.activation_date || '',
+            plan: `${sub.trades_total} Month${sub.trades_total > 1 ? 's' : ''}`,
+            current_value: 0,
+            total_investment: 0,
+            current_returns: 0,
+            total_returns: 0,
+            total_stocks: stocksCount?.rtot || 0, // Consider replacing with actual count if needed
+            last_rebalance: sub.last_rebalance_date,
+            next_rebalance: sub.next_rebalance_date,
+            is_renew: daysLeft !== null && daysLeft <= 5,
+            rebalance_frequency: sub.rebalance_frequency,
+            activation_date: sub.activation_date,
+            isActiveSubscription: !!sub.hasActiveSubscription,
+            isExpiredSubscription: !!sub.hasExpiredSubscription,
           }
-
-          return null
         })
       )
 
@@ -305,33 +265,14 @@ export class UserService {
       if (!subscriber) throw new NotFoundException('User not found')
       if (!sub) throw new NotFoundException('Subscription not found')
 
-      const activation_date = getFormattedDate(sub.activation_date)
-      const activationDateTime = `${activation_date} ${sub.activation_time}`
-      let expiryDateTime = ''
-
-      if (sub.expiry_date && sub.expiry_date !== '0000-00-00' && sub.expiry_date !== 'Invalid DateTime') {
-        expiryDateTime = `${sub.expiry_date} ${sub.expiry_time}`
-      }
-
-      const perfPromise = getSubscriberNotificationsStats(sub.serviceid, activationDateTime, expiryDateTime)
-
-      // Portfolio count promise (only if plantype === 1)
       let stocksCountPromise: Promise<{ rtot: number }> = Promise.resolve({ rtot: 0 })
       if (sub.plantype === 1) {
         stocksCountPromise = getPortfolioCount(sub.serviceid)
       }
 
       // Run both concurrently
-      const [perf, stocksCount] = await Promise.all([perfPromise, stocksCountPromise])
+      const [stocksCount] = await Promise.all([stocksCountPromise])
 
-      const rtot = Number(perf.rtot) || 0
-      const ptot = Number(perf.ptot) || 0
-      const ntot = Number(perf.ntot) || 0
-      const tprof = Number(perf.tprof) || 0
-      const tloss = Number(perf.tloss) || 0
-
-      const netProfit = rtot ? ((tprof + tloss) / rtot).toFixed(2) : '0'
-      const accuracy = rtot ? ((ptot / rtot) * 100).toFixed(2) : '0'
       const statusColor = sub.status === 'Active' ? '#16B24B' : '#FF4444'
 
       const salesRepresentative = [
@@ -354,6 +295,8 @@ export class UserService {
         activation_date: sub.activation_date,
         status_color: statusColor,
         rebalance_frequency: sub.rebalance_frequency,
+        isActiveSubscription: !!sub.hasActiveSubscription,
+        isExpiredSubscription: !!sub.hasExpiredSubscription,
         salesRepresentative,
         asset_class: {
           id: sub.asset_class_id,
@@ -369,36 +312,18 @@ export class UserService {
 
       let response: any = null
 
-      if (sub.plantype === 0) {
-        response = {
-          ...commonData,
-          creditBalance: sub.trades_available,
-          creditTotal: sub.trades_total,
-          totalCalls: rtot,
-          profileCalls: tprof,
-          totalProfit: ptot,
-          totalLoss: tloss,
-          lossCalls: ntot,
-          netProfile: netProfit,
-          accuracy,
-          is_renew: sub.trades_total < 5,
-        }
-      } else if (sub.plantype === 1) {
-        const daysLeft = sub.expiry_date ? moment(sub.expiry_date).diff(moment(), 'days') : null
-        response = {
-          ...commonData,
-          plan: `${sub.trades_total} Month${sub.trades_total > 1 ? 's' : ''}`,
-          current_value: 0,
-          total_investment: 0,
-          current_returns: 0,
-          total_returns: 0,
-          total_stocks: stocksCount?.rtot || 0,
-          last_rebalance: sub.last_rebalance_date,
-          next_rebalance: sub.next_rebalance_date,
-          is_renew: daysLeft !== null && daysLeft <= 5,
-        }
-      } else {
-        throw new BadRequestException('Unsupported plantype')
+      const daysLeft = sub.expiry_date ? moment(sub.expiry_date).diff(moment(), 'days') : null
+      response = {
+        ...commonData,
+        plan: `${sub.trades_total} Month${sub.trades_total > 1 ? 's' : ''}`,
+        current_value: 0,
+        total_investment: 0,
+        current_returns: 0,
+        total_returns: 0,
+        total_stocks: stocksCount?.rtot || 0,
+        last_rebalance: sub.last_rebalance_date,
+        next_rebalance: sub.next_rebalance_date,
+        is_renew: daysLeft !== null && daysLeft <= 5,
       }
 
       await this.cache.set(cacheKey, { status: 'success', data: response }, ttl)

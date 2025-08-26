@@ -104,6 +104,8 @@ export async function getSubscriberSubscriptions(subscriberid: number, skip = 0,
         'sv.last_rebalance_date AS last_rebalance_date',
         'sv.next_rebalance_date AS next_rebalance_date',
         'sv.rebalance_frequency AS rebalance_frequency',
+        `CASE WHEN sub.expiry_date > NOW() THEN TRUE ELSE FALSE END AS hasActiveSubscription`,
+        `CASE WHEN sub.expiry_date <= NOW() THEN TRUE ELSE FALSE END AS hasExpiredSubscription`,
         'sv.id AS serviceid',
       ])
       .from('tbl_subscription', 'sub')
@@ -147,6 +149,8 @@ export async function getSubscriptionDetails(id: number) {
       'ac.id AS asset_class_id',
       'ac.asset_name AS asset_class_name',
       'ac.exchange AS asset_class_exchange',
+      `CASE WHEN sub.expiry_date > NOW() THEN TRUE ELSE FALSE END AS hasActiveSubscription`,
+      `CASE WHEN sub.expiry_date <= NOW() THEN TRUE ELSE FALSE END AS hasExpiredSubscription`,
     ])
     .from('tbl_subscription', 'sub')
     .innerJoin('tbl_services', 'sv', 'sub.serviceid = sv.id')
