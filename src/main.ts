@@ -3,7 +3,6 @@ import { ExpressAdapter, NestExpressApplication } from '@nestjs/platform-express
 import { ValidationPipe, Logger } from '@nestjs/common'
 import * as path from 'path'
 import compression from 'compression'
-import basicAuth from 'express-basic-auth'
 import helmet from 'helmet' // ✅ Fixed import
 import morgan from 'morgan'
 
@@ -22,15 +21,7 @@ async function bootstrap() {
   app.enable('trust proxy')
   app.use(helmet()) // ✅ No need for .default()
   app.use(compression()) // ✅ Now works correctly
-  app.use(
-    '/api-docs', // ✅ Match the route from swagger setup
-    basicAuth({
-      challenge: true,
-      users: {
-        [process.env.SWAGGER_USER || 'admin']: process.env.SWAGGER_PASSWORD || 'password', // ✅ Added fallbacks
-      },
-    })
-  )
+
   app.use(morgan('combined'))
   setupSwagger(app)
 

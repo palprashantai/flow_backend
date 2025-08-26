@@ -7,4 +7,4 @@ import { PaymentService } from './payment.service';
   providers: [PaymentService],
   exports: [PaymentService],
 })
-export class SmallcaseModule {}
+export class PaymentModule {}

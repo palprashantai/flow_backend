@@ -15,7 +15,7 @@ import { SettingModule } from 'modules/setting/setting.module'
 import { CacheModule } from 'cache.module'
 import { PortfolioModule } from 'modules/portfolio/portfolio.module'
 import { UserModule } from 'modules/user/user.module'
-import { SmallcaseModule } from 'modules/payment/payment.module'
+import { PaymentModule } from 'modules/payment/payment.module'
 
 @Module({
   imports: [
@@ -39,7 +39,7 @@ import { SmallcaseModule } from 'modules/payment/payment.module'
     SettingModule,
     CommonModule,
     PortfolioModule,
-    SmallcaseModule,
+    PaymentModule,
     CacheModule,
   ],
   controllers: [AppController],

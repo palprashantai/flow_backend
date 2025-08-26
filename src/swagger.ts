@@ -4,7 +4,7 @@ import { AuthModule } from 'modules/auth/auth.module'
 import { SettingModule } from 'modules/setting/setting.module'
 import { PortfolioModule } from 'modules/portfolio/portfolio.module'
 import { UserModule } from 'modules/user/user.module'
-import { SmallcaseModule } from 'modules/payment/payment.module'
+import { PaymentModule } from 'modules/payment/payment.module'
 
 export function setupSwagger(app: INestApplication) {
   const options = new DocumentBuilder()
@@ -40,7 +40,7 @@ export function setupSwagger(app: INestApplication) {
       UserModule,
       SettingModule,
       PortfolioModule,
-      SmallcaseModule,
+      PaymentModule,
 
       // Add your actual modules here
       // AuthModule,
