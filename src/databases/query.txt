@@ -1,0 +1,45 @@
+1. CREATE TABLE `tbl_subscriber_acceptance` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `subscriberid` INT NOT NULL,
+  `accepted_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `source` TINYINT NOT NULL COMMENT '1 - Website Payment Agreement / 2 - Website - Client Acceptance Page / 3 - Current Mobile App / 4 - Folio App',
+  `created_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idx_subscriberid` (`subscriberid`),
+  CONSTRAINT `fk_subscriber_acceptance_subscriber`
+    FOREIGN KEY (`subscriberid`) REFERENCES `tbl_subscriber` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE `tbl_app_folio` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `subscriberid` INT NOT NULL,
+  `token` VARCHAR(255) NOT NULL,
+  `deviceid` VARCHAR(255) NOT NULL,
+  `created_on` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_subscriberid` (`subscriberid`),
+  CONSTRAINT `fk_appfolio_subscriber`
+    FOREIGN KEY (`subscriberid`) 
+    REFERENCES `tbl_subscriber`(`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `tbl_app_trades` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `subscriberid` INT NOT NULL,
+  `token` VARCHAR(255) NOT NULL,
+  `deviceid` VARCHAR(255) NOT NULL,
+  `created_on` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_subscriberid` (`subscriberid`),
+  CONSTRAINT `fk_apptrades_subscriber`
+    FOREIGN KEY (`subscriberid`) 
+    REFERENCES `tbl_subscriber`(`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

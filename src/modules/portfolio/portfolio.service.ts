@@ -20,7 +20,7 @@ export class PortfolioService {
   private readonly logger = logger
 
   constructor(private readonly portfolioDetailReposistory: PortfolioDetailReposistory) {}
-  
+
   async getHomeData(userId: number): Promise<any> {
     try {
       const [marketTodayResult, userTypeResult, allInsightResult] = await Promise.allSettled([
@@ -47,10 +47,12 @@ export class PortfolioService {
         getAvailableFiltersForPortfolio(),
       ])
 
-      const portfolios = portfoliosResult.status === 'fulfilled' ? portfoliosResult.value : []
+      const { portfolios, pagination, userType } =
+        portfoliosResult.status === 'fulfilled' ? portfoliosResult.value : { portfolios: [], pagination: {}, userType: null }
+
       const availableFilters = filtersResult.status === 'fulfilled' ? filtersResult.value : {}
 
-      return { portfolios, availableFilters }
+      return { portfolios, userType, availableFilters, pagination }
     } catch (error) {
       logger.error('🔴 Error in getFilteredPortfolios:', error)
       throw new InternalServerErrorException('Failed to fetch portfolios')

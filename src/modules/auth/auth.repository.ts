@@ -33,6 +33,7 @@ export async function insertOtpLog(mobile: string, body: any): Promise<void> {
   }
 }
 
+
 /**
  * Saves OTP into `tbl_otpbox`
  */

@@ -1,7 +1,14 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Not, Repository } from 'typeorm'
+import { DataSource, In, Not, Repository } from 'typeorm'
 
 import { JwtPayload } from './auth.interface'
 import { ConfigService } from '@nestjs/config'
@@ -20,7 +27,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     public readonly configService: ConfigService,
     private readonly commonService: CommonService,
-
+    private readonly dataSource: DataSource,
     @InjectRepository(OtpBoxEntity)
     private readonly otpRepo: Repository<OtpBoxEntity>,
     @InjectRepository(Subscriber)
@@ -149,8 +156,6 @@ export class AuthService {
     let usertype = 0
     const logEvent = await getUtmByDeviceId(cleanDeviceId)
 
-    console.log('logEvent', logEvent)
-
     if (!subscriber) {
       subscriberid = await getNextSubscriberID()
       const assignedto = await this.assignLeadSubscriber('MobileApp', 0, 0)
@@ -184,9 +189,6 @@ export class AuthService {
           utm_campaign: logEvent.utm_campaign || '',
           utm_medium: logEvent.utm_medium || '',
         }),
-
-        // this.commonService.checkWorkFlowLeadCreation(subscriberid),
-        // this.commonService.checkWorkflowSubscriberWorkflow(subscriberid, 'insert'),
       ])
 
       usertype = 1
@@ -217,6 +219,19 @@ export class AuthService {
 
       this.logger.info(`Existing subscriber logged in: ${subscriber.subscriberid}`)
     }
+
+    // ✅ Insert or Update tbl_app_folio
+    await this.dataSource
+      .createQueryBuilder()
+      .insert()
+      .into('tbl_app_folio')
+      .values({
+        subscriberid: subscriber.id,
+        token: cleanToken,
+        deviceid: cleanDeviceId,
+        created_on: currentTime,
+      })
+      .execute()
 
     const filteredSubscriber = {
       id: subscriber.id,
@@ -283,24 +298,38 @@ export class AuthService {
    * @throws NotFoundException if subscriber does not exist.
    */
   async userAcceptance(subscriberId: number) {
-    // Fetch subscriber
+    // 🔹 1. Fetch subscriber
     const subscriber = await this.subscriberRepo.findOne({
       where: { id: subscriberId, isdelete: 0 },
     })
     if (!subscriber) {
       throw new NotFoundException('Subscriber not found')
     }
-    const currentTime = getCurrentDateTime()
 
-    // Update user acceptance timestamp
-    subscriber.user_acceptance = new Date(currentTime)
-    subscriber.updated_on = currentTime
+    const currentTime = new Date()
 
+    // 🔹 2. Update subscriber verification + acceptance
+    subscriber.user_acceptance = currentTime
+    subscriber.updated_on = currentTime.toISOString().slice(0, 19).replace('T', ' ')
+    subscriber.verifyuser = 1
+    subscriber.verifiedon = currentTime
     await this.subscriberRepo.save(subscriber)
+
+    // 🔹 3. Insert into tbl_subscriber_acceptance
+    await this.dataSource
+      .createQueryBuilder()
+      .insert()
+      .into('tbl_subscriber_acceptance')
+      .values({
+        subscriberid: subscriberId,
+        accepted_on: currentTime,
+        source: 4, // pass 1/2/3/4 based on request
+      })
+      .execute()
 
     return {
       success: true,
-      message: 'success',
+      message: 'Subscriber verified and acceptance recorded',
     }
   }
 
@@ -380,5 +409,84 @@ export class AuthService {
     }
 
     return assignedTo
+  }
+
+  async registerReferral(subscriberId: number) {
+    try {
+      const subscriber = await this.subscriberRepo.findOne({
+        where: { id: subscriberId, isdelete: 0 },
+      })
+
+      if (!subscriber) {
+        throw new NotFoundException('Subscriber not found')
+      }
+
+      // Check if subscriber already has a referral code
+      if (subscriber.referralcode) {
+        return {
+          message: 'Referral code already exists',
+          referralCode: subscriber.referralcode,
+        }
+      }
+
+      // Generate unique referral code with retry logic
+      let referralCode: string
+      let isUnique = false
+      let attempts = 0
+      const maxAttempts = 10
+
+      // Using cleaner character set (removing similar looking characters)
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+      while (!isUnique && attempts < maxAttempts) {
+        // Generate 5-character code
+        referralCode = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+
+        // Check if this code already exists
+        const existingCode = await this.subscriberRepo.findOne({
+          where: { referralcode: referralCode },
+          select: ['id'], // Only select ID for performance
+        })
+
+        if (!existingCode) {
+          isUnique = true
+        }
+
+        attempts++
+      }
+
+      // If we couldn't generate a unique code after max attempts
+      if (!isUnique) {
+        throw new InternalServerErrorException('Unable to generate unique referral code. Please try again.')
+      }
+
+      // Update subscriber with new referral code
+      subscriber.referralcode = referralCode
+      subscriber.updated_on = new Date().toISOString()
+
+      await this.subscriberRepo.save(subscriber)
+
+      // Log the referral code generation (optional)
+      console.log(`Referral code ${referralCode} generated for subscriber ${subscriberId}`)
+
+      return {
+        message: 'Referral code registered successfully',
+        referralCode,
+      }
+    } catch (error) {
+      // Re-throw known exceptions
+      if (error instanceof NotFoundException || error instanceof InternalServerErrorException) {
+        throw error
+      }
+
+      // Handle database errors
+      if (error?.code === '23505' || error?.message?.includes('duplicate')) {
+        // Rare case where duplicate was inserted between check and save
+        throw new ConflictException('Referral code generation failed. Please try again.')
+      }
+
+      console.error('Error registering referral:', error)
+      throw new InternalServerErrorException('Could not register referral')
+    }
   }
 }

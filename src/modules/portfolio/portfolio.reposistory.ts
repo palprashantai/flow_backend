@@ -18,11 +18,13 @@ export async function getUserType(userId?: number) {
         userType: 'first_time',
         hasActiveSubscription: false,
         hasExpiredSubscription: false,
+        isReferral: false,
       }
     }
 
     const ds = await dataSource
 
+    // 🔹 Get subscription status
     const subscriptions = await ds
       .createQueryBuilder()
       .select([
@@ -36,6 +38,7 @@ export async function getUserType(userId?: number) {
     const hasActiveSubscription = parseInt(subscriptions.activeCount) > 0
     const hasExpiredSubscription = parseInt(subscriptions.expiredCount) > 0
 
+    // 🔹 Determine userType
     let userType: 'first_time' | 'subscriber' | 'expired'
     if (hasActiveSubscription) {
       userType = 'subscriber'
@@ -45,10 +48,21 @@ export async function getUserType(userId?: number) {
       userType = 'first_time'
     }
 
+    // 🔹 Check referral code
+    const subscriber = await ds
+      .createQueryBuilder()
+      .select('s.referralcode')
+      .from('tbl_subscriber', 's')
+      .where('s.id = :userId', { userId })
+      .getRawOne()
+
+    const isReferral = !!subscriber?.referralcode
+
     return {
       userType,
       hasActiveSubscription,
       hasExpiredSubscription,
+      isReferral,
     }
   } catch (error) {
     logger.error('🔴 Error in getUserStatus:', error)
