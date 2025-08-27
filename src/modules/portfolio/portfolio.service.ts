@@ -2,6 +2,9 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 
 import {
+  buildPortfolioHistoryQuery,
+  fetchPlansByServiceIdPortfolio,
+  fetchStocksByServiceIdPortfolio,
   getAllInsight,
   getAvailableDurationsForPortfolio,
   getAvailableFiltersForPortfolio,
@@ -279,6 +282,100 @@ export class PortfolioService {
       }
     } catch (error) {
       logger.error('🔴 Error in getServicePortfolio:', error)
+      throw new InternalServerErrorException(error.message || 'Internal Server Error')
+    }
+  }
+
+  async getPortfolioHistoryMerged(serviceId: number, options: { page?: number; limit?: number; duration?: string; assetId?: number }) {
+    let { page = 1, limit = 10, duration, assetId } = options
+    const offset = (page - 1) * limit
+
+    // ✅ Get query from helper
+    const { rows, total } = await buildPortfolioHistoryQuery(serviceId, {
+      duration,
+      assetId,
+      limit,
+      offset,
+    })
+
+    const items = rows.map((row: any) => ({
+      sdate: row.sdate,
+      portfolio_amount: parseFloat(row.portfolio_amount || 0),
+      asset_amount: parseFloat(row.asset_amount || 0),
+      asset_id: row.assetid || null,
+    }))
+
+    return {
+      items,
+      total: parseInt(total),
+      page,
+      limit,
+      totalPages: Math.ceil(parseInt(total) / limit),
+      filters: {
+        serviceId,
+        assetId: assetId || null,
+        duration: duration || null,
+      },
+    }
+  }
+
+  async getPortfolioPlans(service_id: number) {
+    if (!service_id) {
+      throw new BadRequestException('Service ID is required.')
+    }
+
+    try {
+      const plans = await fetchPlansByServiceIdPortfolio(service_id)
+
+      const formattedPlans = plans.map((plan: any) => ({
+        id: plan.id,
+        planid: plan.productid,
+        title: plan.credits === 1 ? `${plan.credits} Month` : `${plan.credits} Months`,
+        price: plan.credits_price,
+      }))
+
+      const dos = ['Seamlessly place orders in 1 click', 'Get regular re-balance updates']
+
+      const donts = ['Easily start SIPs for disciplined investing']
+
+      return {
+        success: true,
+        message: 'Plans retrieved successfully',
+        result: { plans: formattedPlans, dos, donts },
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio plans:', error)
+      throw new InternalServerErrorException('Internal Server Error')
+    }
+  }
+
+  async getPortfolioStocks(service_id: number) {
+    if (!service_id) throw new BadRequestException('Service ID is required.')
+
+    try {
+      const portfolio = await fetchStocksByServiceIdPortfolio(service_id)
+
+      if (!portfolio.length) {
+        throw new NotFoundException('Portfolio not found')
+      }
+
+      const formattedPortfolio = portfolio.map((stock) => ({
+        name: stock.stocks,
+        weight: stock.weightage !== null ? parseFloat(stock.weightage) : null,
+        price: stock.price !== null ? parseFloat(stock.price) : null,
+        quantity: stock.quantity,
+      }))
+
+      const dos = ['Seamlessly place orders in 1 click', 'Get regular re-balance updates']
+      const donts = ['Easily start SIPs for disciplined investing']
+
+      return {
+        success: true,
+        message: 'Portfolio retrieved successfully',
+        result: { portfolio: formattedPortfolio, dos, donts },
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio stocks:', error)
       throw new InternalServerErrorException(error.message || 'Internal Server Error')
     }
   }

@@ -1,4 +1,4 @@
-import { InternalServerErrorException } from '@nestjs/common'
+import { InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { dataSource } from 'databases/data-source'
 import { logger } from 'middlewares/logger.middleware'
 import { FilterPortfolioDto } from './portfolio.dto'
@@ -418,5 +418,132 @@ export async function getAvailableDurationsForPortfolio(serviceId: number): Prom
   } catch (error) {
     logger.error('🔴 Error in getAvailableDurationsForPortfolio:', error)
     throw new InternalServerErrorException('Failed to fetch available durations')
+  }
+}
+
+export async function fetchPlansByServiceIdPortfolio(service_id: number) {
+  const ds = await dataSource
+  const plans = await ds.query('SELECT * FROM tbl_services_sub WHERE sid = ? AND isdelete = 0', [service_id])
+
+  if (!plans.length) {
+    throw new NotFoundException('Plan not found')
+  }
+
+  return plans
+}
+
+export async function buildPortfolioHistoryQuery(
+  serviceId: number,
+  options: { duration?: string; assetId?: number; limit: number; offset: number }
+) {
+  let { duration, assetId, limit, offset } = options
+
+  // Build WHERE
+  const whereConditions: string[] = ['p.serviceid = ?']
+  const whereParams: any[] = [serviceId]
+
+  // Handle duration filter
+  if (duration) {
+    duration = duration.toLowerCase()
+    let startDate: string | undefined
+    const now = dayjs()
+
+    switch (duration) {
+      case '1m':
+        startDate = now.subtract(1, 'month').format('YYYY-MM-DD')
+        break
+      case '3m':
+        startDate = now.subtract(3, 'month').format('YYYY-MM-DD')
+        break
+      case '6m':
+        startDate = now.subtract(6, 'month').format('YYYY-MM-DD')
+        break
+      case '1y':
+        startDate = now.subtract(1, 'year').format('YYYY-MM-DD')
+        break
+      case '3y':
+        startDate = now.subtract(3, 'year').format('YYYY-MM-DD')
+        break
+      case '5y':
+        startDate = now.subtract(5, 'year').format('YYYY-MM-DD')
+        break
+    }
+
+    if (startDate) {
+      whereConditions.push('p.sdate >= ?')
+      whereParams.push(startDate)
+    }
+  }
+
+  // Handle asset filter
+  if (assetId) {
+    whereConditions.push(`
+      EXISTS (
+        SELECT 1 FROM tbl_asset_class_history a2 
+        WHERE a2.sdate = p.sdate AND a2.assetid = ?
+      )
+    `)
+    whereParams.push(assetId)
+  }
+
+  const whereClause = `WHERE ${whereConditions.join(' AND ')}`
+  let joinCondition = 'p.sdate = a.sdate'
+  const joinParams: any[] = []
+
+  if (assetId) {
+    joinCondition += ' AND a.assetid = ?'
+    joinParams.push(assetId)
+  }
+
+  // Final query
+  const query = `
+    SELECT 
+      p.id,
+      p.sdate,
+      p.portfolio_amount, 
+      COALESCE(a.asset_amount, 0) AS asset_amount,
+      a.assetid,
+      total_table.total_count
+    FROM tbl_portfolio_history p
+    LEFT JOIN tbl_asset_class_history a ON ${joinCondition}
+    CROSS JOIN (
+      SELECT COUNT(DISTINCT p.sdate) AS total_count 
+      FROM tbl_portfolio_history p
+      ${whereClause}
+    ) AS total_table
+    ${whereClause}
+    ORDER BY p.sdate DESC
+    LIMIT ? OFFSET ?
+  `
+
+  const queryParams = [...joinParams, ...whereParams, ...whereParams, limit, offset]
+  const ds = await dataSource
+
+  // === Query oldest date from history ===
+  const rows = await ds.query(query, queryParams)
+  const total = rows.length > 0 ? rows[0].total_count : 0
+
+  return { rows, total }
+}
+
+export async function fetchStocksByServiceIdPortfolio(service_id: number) {
+  try {
+    if (!service_id) {
+      throw new Error('Service ID is required.')
+    }
+
+    const ds = await dataSource
+
+    const stocks = ds
+      .createQueryBuilder()
+      .select(['p.stocks AS stocks', 'p.weightage AS weightage', 'p.price AS price', 'p.quantity AS quantity'])
+      .from('tbl_portfolio', 'p')
+      .where('p.serviceid = :service_id', { service_id })
+      .andWhere('p.isdelete = 0')
+      .getRawMany()
+
+    return stocks
+  } catch (error) {
+    throw new InternalServerErrorException('Error fetching stocks by service ID.')
   }
 }

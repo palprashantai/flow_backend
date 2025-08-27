@@ -1,6 +1,6 @@
 // dto/create-ticket.dto.ts
-import { IsOptional, IsString } from 'class-validator'
-import { ApiPropertyOptional } from '@nestjs/swagger'
+import { IsIn,  IsOptional, IsString } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class CreateAppEventLogDto {
   @ApiPropertyOptional({
@@ -34,4 +34,25 @@ export class CreateAppEventLogDto {
   @IsOptional()
   @IsString()
   payload?: string
+}
+export class UpdateNotificationDto {
+  @ApiProperty({ description: 'Trade notifications: 0 = off, 1 = on', required: false })
+  @IsOptional()
+  @IsIn([0, 1])
+  n_trade?: number
+
+  @ApiProperty({ description: 'Rebalance notifications: 0 = off, 1 = on', required: false })
+  @IsOptional()
+  @IsIn([0, 1])
+  n_rebalance?: number
+
+  @ApiProperty({ description: 'Streetview notifications: 0 = off, 1 = on', required: false })
+  @IsOptional()
+  @IsIn([0, 1])
+  n_streetview?: number
+
+  @ApiProperty({ description: 'Reminders notifications: 0 = off, 1 = on', required: false })
+  @IsOptional()
+  @IsIn([0, 1])
+  n_reminders?: number
 }

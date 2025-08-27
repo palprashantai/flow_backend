@@ -1,3 +1,5 @@
+import { dataSource } from 'databases/data-source'
+
 export const streetfoliosInfo = {
   title: 'About Streetfolios',
   description:
@@ -68,4 +70,79 @@ export const streetfoliosInfo = {
       icon: 'wealth',
     },
   ],
+}
+
+export async function getSubscriberInfo(subscriberid: number) {
+  const ds = await dataSource
+  return await ds
+    .createQueryBuilder()
+    .select([
+      't1.id AS id',
+      't1.subscriberid AS subscriberid',
+      't1.fullname AS fullname',
+      't1.email AS email',
+      't1.mobileno AS mobileno',
+      't1.imgurl AS imgurl',
+      't1.state AS state',
+      't1.language AS language',
+      't1.address AS address',
+      't2.user_fullname AS user_fullname',
+      't2.user_mob2 AS user_mob2',
+      't2.user_whatsapp AS user_whatsapp',
+    ])
+    .from('tbl_subscriber', 't1')
+    .leftJoin('tbl_userinfo', 't2', 't1.assignedto = t2.id')
+    .where('t1.isdelete = 0 AND t1.id = :subscriberid', { subscriberid })
+    .getRawOne()
+}
+
+export async function getCompanyInfo() {
+  const ds = await dataSource
+  return await ds
+    .createQueryBuilder()
+    .select(['c.whatsapp_link', 'c.technical_email', 'c.technical_phone'])
+    .from('tbl_company', 'c')
+    .where('c.id = 1 AND c.isdelete = 0')
+    .getRawOne()
+}
+
+export async function getFinePrint(slug: string) {
+  const ds = await dataSource
+  return await ds.query(
+    `SELECT title, slug, heading, hasForm, description 
+         FROM tbl_custom_pages 
+         WHERE isdelete = 0 AND slug = ? 
+         ORDER BY id`,
+    [slug]
+  )
+}
+export async function updateNotifications(updateFields: any, userId: number) {
+  const ds = await dataSource
+
+  await ds
+    .createQueryBuilder()
+    .update('tbl_subscriber')
+    .set(updateFields)
+    .where('subscriberid = :subscriberid', { subscriberid: userId })
+    .execute()
+}
+
+export async function getFaqList(seoId: number) {
+  try {
+    const ds = await dataSource
+
+    const faqs = await ds
+      .createQueryBuilder()
+      .select(['id', 'title', 'description', 'faq_type'])
+      .from('tbl_seo_faq', 'faq')
+      .where('faq.isdelete = :isdelete', { isdelete: 0 })
+      .andWhere('faq.seo_id = :seoId', { seoId })
+      .orderBy('faq.id', 'ASC')
+      .getRawMany()
+
+    return { success: true, data: faqs }
+  } catch (error) {
+    console.error('Error fetching FAQs:', error.message)
+    return { success: false, message: 'Failed to fetch FAQ list', error: error.message }
+  }
 }
