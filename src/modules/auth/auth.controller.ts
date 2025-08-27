@@ -94,7 +94,6 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'userAcceptance saved successfully' })
   async userAcceptance(@GetUserId('id') userId: number) {
-    if (!userId) throw new UnauthorizedException('Invalid user token')
     const result = await this.authService.userAcceptance(userId)
     return result
   }

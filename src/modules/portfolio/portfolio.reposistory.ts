@@ -5,12 +5,6 @@ import { FilterPortfolioDto } from './portfolio.dto'
 
 import dayjs from 'dayjs'
 
-// 🔹 Small helper for description cleanup
-// function sanitizeDescription(text: string | null): string {
-//   if (!text) return ''
-//   return text.replace(/<\/?[^>]+(>|$)/g, '').trim() // strip HTML if needed
-// }
-
 export async function getUserType(userId?: number) {
   try {
     if (!userId) {
@@ -51,7 +45,7 @@ export async function getUserType(userId?: number) {
     // 🔹 Check referral code
     const subscriber = await ds
       .createQueryBuilder()
-      .select('s.referralcode')
+      .select('s.referralcode AS referralcode ')
       .from('tbl_subscriber', 's')
       .where('s.id = :userId', { userId })
       .getRawOne()

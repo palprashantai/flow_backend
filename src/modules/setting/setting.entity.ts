@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
-@Entity('tbl_log_appevents')
+@Entity('tbl_log_streetfolio_events')
 export class AppEventLog {
   @PrimaryGeneratedColumn()
   id: number

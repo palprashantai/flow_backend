@@ -4,11 +4,8 @@ import { Subscriber } from './auth.entity'
 import { InternalServerErrorException } from '@nestjs/common'
 import { logger as logger } from 'middlewares/logger.middleware'
 
-
 export const getUserBy = getSingleBy(Subscriber)
 export const getUsersBy = getManyBy(Subscriber)
-
-
 
 /**
  * Logs OTP request data into `tbl_log3`
@@ -32,7 +29,6 @@ export async function insertOtpLog(mobile: string, body: any): Promise<void> {
     throw new InternalServerErrorException('Failed to log OTP request')
   }
 }
-
 
 /**
  * Saves OTP into `tbl_otpbox`

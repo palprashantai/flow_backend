@@ -125,18 +125,10 @@ export class SettingService {
         result: {
           support: [
             {
-              // whatsapp: {
-              //   text: 'Whatsapp link',
-              //   link: `https://wa.me/${subscriber.user_whatsapp}`,
-              // },
               email: {
                 text: 'Email',
-                link: company.c_technical_email,
+                link: company.technical_email,
               },
-              // contact: {
-              //   text: 'Contact us',
-              //   link: subscriber.user_mob2, // Replace with actual contact number
-              // },
             },
           ],
         },

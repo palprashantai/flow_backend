@@ -100,7 +100,7 @@ export async function getCompanyInfo() {
   const ds = await dataSource
   return await ds
     .createQueryBuilder()
-    .select(['c.whatsapp_link', 'c.technical_email', 'c.technical_phone'])
+    .select(['c.technical_email'])
     .from('tbl_company', 'c')
     .where('c.id = 1 AND c.isdelete = 0')
     .getRawOne()
