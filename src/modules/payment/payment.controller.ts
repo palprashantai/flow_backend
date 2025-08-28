@@ -1,7 +1,14 @@
 import { Body, Controller, Get, Param, Post, UnauthorizedException } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiExcludeEndpoint } from '@nestjs/swagger'
 
-import { CreateTransactionDto, CreateSubscriptionDto, CreatePlanDto, CreateOrderDto, CreatePortfolioOrderDto } from './payment.dto'
+import {
+  CreateTransactionDto,
+  CreateSubscriptionDto,
+  CreatePlanDto,
+  CreateOrderDto,
+  CreatePortfolioOrderDto,
+  VerifyOtpDto,
+} from './payment.dto'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { PaymentService } from './payment.service'
 
@@ -176,5 +183,19 @@ export class PaymentController {
   @ApiResponse({ status: 400, description: 'Invalid input or missing token' })
   async paymentSuccessPortfolio(@Body() dto: CreatePortfolioOrderDto, @GetUserId('id') userId: number) {
     return this.paymentService.paymentSuccessPortfolio(dto, userId)
+  }
+
+  @Post('verifyOtp')
+  @ApiOperation({ summary: 'Verify OTP for KYC' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'OTP verification result',
+    schema: {
+      example: { success: true, message: 'OTP verified' },
+    },
+  })
+  async verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.paymentService.verifyOtp(dto)
   }
 }

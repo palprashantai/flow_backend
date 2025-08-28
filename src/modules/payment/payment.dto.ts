@@ -1,6 +1,7 @@
 import { IsArray, IsIn, IsInt, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
+import { Length } from 'class-validator'
 
 export class SecurityDto {
   @ApiProperty({ example: 'IDEA' })
@@ -168,4 +169,18 @@ export class CreatePortfolioOrderDto {
 
   @IsOptional()
   use_balance?: boolean
+}
+
+
+export class VerifyOtpDto {
+  @ApiProperty({ example: '9876543210', description: 'Mobile number of the user' })
+  @IsNotEmpty()
+  @IsString()
+  @Length(10, 10)
+  usermobile: string
+
+  @ApiProperty({ example: '123456', description: 'OTP received by the user' })
+  @IsNotEmpty()
+  @IsString()
+  otp: string
 }

@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { logger } from 'middlewares/logger.middleware'
 import { getUserBy } from 'modules/auth/auth.repository'
 import moment from 'moment'
@@ -22,12 +22,19 @@ import {
 import { UpdateSubscriberBillingDetailsDto, UpdateSubscriberEmailDto } from './user.dto'
 import { checkExpiryDate } from 'helper'
 import NodeCache from 'node-cache'
+import { Subscriber } from 'modules/auth/auth.entity'
+import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
 
 @Injectable()
 export class UserService {
   private readonly logger = logger
 
-  constructor(@Inject('NODE_CACHE') private readonly cache: NodeCache) {}
+  constructor(
+    @Inject('NODE_CACHE') private readonly cache: NodeCache,
+    @InjectRepository(Subscriber)
+    private readonly subscriberRepo: Repository<Subscriber>
+  ) {}
 
   async getProfile(subscriberid: number): Promise<any> {
     try {
@@ -128,6 +135,85 @@ export class UserService {
     } catch (error) {
       this.logger.error('Error updating subscriber email:', error)
       throw new InternalServerErrorException('Internal Server Error')
+    }
+  }
+
+  async registerReferral(subscriberId: number) {
+    try {
+      const subscriber = await this.subscriberRepo.findOne({
+        where: { id: subscriberId, isdelete: 0 },
+      })
+
+      if (!subscriber) {
+        throw new NotFoundException('Subscriber not found')
+      }
+
+      // Check if subscriber already has a referral code
+      if (subscriber.referralcode) {
+        return {
+          message: 'Referral code already exists',
+          referralCode: subscriber.referralcode,
+        }
+      }
+
+      // Generate unique referral code with retry logic
+      let referralCode: string
+      let isUnique = false
+      let attempts = 0
+      const maxAttempts = 10
+
+      // Using cleaner character set (removing similar looking characters)
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+      while (!isUnique && attempts < maxAttempts) {
+        // Generate 5-character code
+        referralCode = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+
+        // Check if this code already exists
+        const existingCode = await this.subscriberRepo.findOne({
+          where: { referralcode: referralCode },
+          select: ['id'], // Only select ID for performance
+        })
+
+        if (!existingCode) {
+          isUnique = true
+        }
+
+        attempts++
+      }
+
+      // If we couldn't generate a unique code after max attempts
+      if (!isUnique) {
+        throw new InternalServerErrorException('Unable to generate unique referral code. Please try again.')
+      }
+
+      // Update subscriber with new referral code
+      subscriber.referralcode = referralCode
+      subscriber.updated_on = new Date().toISOString()
+
+      await this.subscriberRepo.save(subscriber)
+
+      // Log the referral code generation (optional)
+      console.log(`Referral code ${referralCode} generated for subscriber ${subscriberId}`)
+
+      return {
+        message: 'Referral code registered successfully',
+        referralCode,
+      }
+    } catch (error) {
+      // Re-throw known exceptions
+      if (error instanceof NotFoundException || error instanceof InternalServerErrorException) {
+        throw error
+      }
+
+      // Handle database errors
+      if (error?.code === '23505' || error?.message?.includes('duplicate')) {
+        // Rare case where duplicate was inserted between check and save
+        throw new ConflictException('Referral code generation failed. Please try again.')
+      }
+
+      console.error('Error registering referral:', error)
+      throw new InternalServerErrorException('Could not register referral')
     }
   }
 

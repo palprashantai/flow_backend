@@ -26,15 +26,11 @@ export class PortfolioService {
 
   async getHomeData(userId: number): Promise<any> {
     try {
-      const [marketTodayResult, userTypeResult, allInsightResult] = await Promise.allSettled([
-        getMarketToday(),
-        getUserType(userId),
-        getAllInsight(),
+      const [marketToday = [], userType = null, allInsights = []] = await Promise.all([
+        getMarketToday().catch(() => []),
+        getUserType(userId).catch(() => null),
+        getAllInsight().catch(() => []),
       ])
-
-      const marketToday = marketTodayResult.status === 'fulfilled' ? marketTodayResult.value : []
-      const userType = userTypeResult.status === 'fulfilled' ? userTypeResult.value : null
-      const allInsights = allInsightResult.status === 'fulfilled' ? allInsightResult.value : []
 
       return { marketToday, userType, allInsights }
     } catch (error) {
@@ -87,7 +83,6 @@ export class PortfolioService {
         portfolioData,
         planData,
         researchCreditsData,
-        segmentsRaw,
         otherServices,
         rebalanceTimeline,
         portfolioMessages,
@@ -96,7 +91,6 @@ export class PortfolioService {
         this.portfolioDetailReposistory.getPortfolioData(serviceId),
         this.portfolioDetailReposistory.getCheapestPlan(serviceId),
         this.portfolioDetailReposistory.getResearchCredits(serviceId),
-        this.portfolioDetailReposistory.getSegmentDataRaw(serviceId),
         this.portfolioDetailReposistory.getOtherServices(serviceId),
         this.portfolioDetailReposistory.getRebalanceTimeline(serviceId),
         this.portfolioDetailReposistory.getPortfolioMessages(serviceId),
@@ -107,7 +101,7 @@ export class PortfolioService {
         ? `${planData[0].credits_price} / ${planData[0].credits} ${planData[0].credits === 1 ? 'Month' : 'Months'}`
         : 'Free'
 
-      const methodology = this.portfolioDetailReposistory.buildMethodologyHTML(service.methodology)
+      const methodology = await this.portfolioDetailReposistory.buildMethodologyHTML(service.methodology)
 
       const WEB_URL = process.env.WEB_URL || 'https://webapp.streetgains.in/'
 
@@ -115,9 +109,7 @@ export class PortfolioService {
         service_id: serviceId,
         service_name: service.service_name,
         service_image: `${service.service_image}`,
-        current_nav: service.current_nav,
-        cagr: service.cagr,
-        cagr_period: '1 Year',
+        cagr: parseFloat(service.cagr).toFixed(2),
         duration: service.investment_period,
         volatility: service.volatility,
         short_description: service.service_description,
@@ -136,15 +128,8 @@ export class PortfolioService {
         subscriptionid: subscriptionId,
         subscription_count: service.subscription_count,
         is_free: service.is_free,
-        is_rebalance: 1,
+        is_rebalance: rebalanceTimeline.length > 0,
         rebalance_timeline_report: service.rebalance_timeline_report || `${WEB_URL}uploads/${service.rebalance_timeline_report}`,
-      }
-
-      const serviceMetadata = {
-        title: service.seo_title,
-        description: service.seo_desc,
-        meta_tags: service.meta_tags || '',
-        schema_script_addition: service.schema_script_addition || '',
       }
 
       const researchCredits = (
@@ -164,26 +149,6 @@ export class PortfolioService {
         freepaid: plan.freepaid ? 'Free' : 'Paid',
       }))
 
-      function assignColorsByWeightage(portfolioData: any[]) {
-        const baseColor = '#2367F4' // darkest color for max weightage
-        const maxWeight = Math.max(...portfolioData.map((p) => p.weightage))
-
-        return portfolioData.map((p, index) => {
-          // factor: 0 (darkest) for max weight, closer to 1 for lighter colors
-          const baseFactor = 1 - p.weightage / maxWeight
-          const variation = (index * 0.1) % 0.3 // ensures uniqueness
-          const factor = Math.min(1, baseFactor + variation)
-
-          return {
-            id: p.id,
-            name: p.stocks,
-            value: p.weightage,
-            company: p.portfolio_segment,
-            color: lightenColor(baseColor, factor),
-          }
-        })
-      }
-
       function lightenColor(hex: string, factor: number) {
         const num = parseInt(hex.replace('#', ''), 16)
         let r = (num >> 16) + Math.round((255 - (num >> 16)) * factor)
@@ -196,8 +161,6 @@ export class PortfolioService {
 
         return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
       }
-
-      const segmentComposition = assignColorsByWeightage(portfolioData)
 
       const asset_class = portfolioData.map((item) => item.asset_class).filter(Boolean)
 
@@ -226,16 +189,6 @@ export class PortfolioService {
         })
       }
 
-      const aboutManager = [
-        {
-          image: `${WEB_URL}uploads/about_us/founder.png`,
-          name: 'Santhosh Kumar V.',
-          descriptions: `<p><b>Santhosh Kumar V</b>, the founder of Streetgains...`,
-        },
-      ]
-
-      const segmentsData = this.portfolioDetailReposistory.buildSegmentData(segmentsRaw)
-
       const relatedServices = otherServices.map((row) => ({
         id: row.id,
         service_name: row.service_name,
@@ -251,34 +204,56 @@ export class PortfolioService {
         limited_slot: 1,
       }))
 
-      const rebalanceTimelineArr = rebalanceTimeline.map((row) => ({
-        datetime: row.datetime ? String(row.datetime) : '',
-        add: row.new_add !== undefined && row.new_add !== null ? String(row.new_add) : '0',
-        sub: row.new_sub !== undefined && row.new_sub !== null ? String(row.new_sub) : '0',
-        description: row.description !== undefined && row.description !== null ? String(row.description) : '',
-      }))
+      const launchDateEntry = {
+        datetime: serviceDetails.launch_date, // or whatever field holds the launch date
+        add: '0',
+        sub: '0',
+        description: 'Portfolio went Live',
+      }
 
-      const segmentCompositionNew = this.portfolioDetailReposistory.buildSegmentCompositionNew(portfolioData)
+      // Build the final timeline array
+      const rebalanceTimelineArr = [
+        launchDateEntry,
+        ...rebalanceTimeline.map((row) => ({
+          datetime: row.datetime ? String(row.datetime) : '',
+          add: row.new_add !== undefined && row.new_add !== null ? String(row.new_add) : '0',
+          sub: row.new_sub !== undefined && row.new_sub !== null ? String(row.new_sub) : '0',
+          description: row.description !== undefined && row.description !== null ? String(row.description) : '',
+        })),
+      ]
+
+      const segmentComposition = await this.portfolioDetailReposistory.buildSegmentCompositionNew(portfolioData)
+
+      const data = {
+        cagrInfo: 'Currently showing 1-year CAGR',
+        service: serviceDetails,
+        portfolioMessages,
+        researchCredits,
+        segmentComposition,
+        holdingsDistribution,
+        relatedServices,
+        livePerformance: assetIdNameArray,
+        availableDurations,
+      } as {
+        cagrInfo: string
+        service: any
+        portfolioMessages: any
+        researchCredits: any
+        segmentComposition: any
+        holdingsDistribution: any
+        relatedServices: any
+        livePerformance: any
+        availableDurations: any
+        rebalanceTimeline?: any[]
+      }
+
+      if (serviceDetails.is_rebalance) {
+        data.rebalanceTimeline = rebalanceTimelineArr
+      }
 
       return {
         status: 'success',
-        data: {
-          cagrInfo: 'Currently showing 1-year CAGR',
-          service: serviceDetails,
-          // portfolioHistory,
-          Metadata: serviceMetadata,
-          portfolioMessages,
-          researchCredits,
-          segmentComposition,
-          holdingsDistribution,
-          aboutManager,
-          segmentsData,
-          relatedServices,
-          rebalanceTimeline: rebalanceTimelineArr,
-          segmentCompositionNew,
-          livePerformance: assetIdNameArray, // ✅ now added
-          availableDurations,
-        },
+        data,
       }
     } catch (error) {
       logger.error('🔴 Error in getServicePortfolio:', error)

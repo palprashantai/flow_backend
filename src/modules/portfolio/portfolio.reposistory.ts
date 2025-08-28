@@ -5,40 +5,97 @@ import { FilterPortfolioDto } from './portfolio.dto'
 
 import dayjs from 'dayjs'
 
+// export async function getUserType(userId?: number) {
+//   try {
+//     if (!userId) {
+//       return {
+//         userType: 'first_time',
+//         hasActiveSubscription: false,
+//         hasExpiredSubscription: false,
+//         isReferral: false,
+//       }
+//     }
+
+//     const ds = await dataSource
+
+//     // 🔹 Get subscription status
+//     const subscriptions = await ds
+//       .createQueryBuilder()
+//       .select([
+//         'COUNT(CASE WHEN expiry_date > NOW() THEN 1 END) AS activeCount',
+//         'COUNT(CASE WHEN expiry_date <= NOW() THEN 1 END) AS expiredCount',
+//       ])
+//       .from('tbl_subscription', 'us')
+//       .where('us.subscriberid = :userId', { userId })
+//       .andWhere('us.isdelete = 0')
+//       .getRawOne()
+
+//     const hasActiveSubscription = parseInt(subscriptions.activeCount) > 0
+//     const hasExpiredSubscription = parseInt(subscriptions.expiredCount) > 0
+
+//     // 🔹 Determine userType
+//     let userType: 'first_time' | 'subscriber' | 'expired'
+//     if (hasActiveSubscription) {
+//       userType = 'subscriber'
+//     } else if (hasExpiredSubscription) {
+//       userType = 'expired'
+//     } else {
+//       userType = 'first_time'
+//     }
+
+//     // 🔹 Check referral code
+//     const subscriber = await ds
+//       .createQueryBuilder()
+//       .select('s.referralcode AS referralcode ')
+//       .from('tbl_subscriber', 's')
+//       .where('s.id = :userId', { userId })
+//       .getRawOne()
+
+//     const isReferral = !!subscriber?.referralcode
+
+//     return {
+//       userType,
+//       hasActiveSubscription,
+//       hasExpiredSubscription,
+//       isReferral,
+//     }
+//   } catch (error) {
+//     logger.error('🔴 Error in getUserStatus:', error)
+//     throw new InternalServerErrorException('Failed to fetch user status')
+//   }
+// }
+
 export async function getUserType(userId?: number) {
   try {
     if (!userId) {
       return {
         userType: 'first_time',
-        hasActiveSubscription: false,
-        hasExpiredSubscription: false,
+        hasSubscription: false,
         isReferral: false,
       }
     }
 
     const ds = await dataSource
 
-    // 🔹 Get subscription status
+    // 🔹 Get subscription counts
     const subscriptions = await ds
       .createQueryBuilder()
-      .select([
-        'COUNT(CASE WHEN expiry_date > NOW() THEN 1 END) AS activeCount',
-        'COUNT(CASE WHEN expiry_date <= NOW() THEN 1 END) AS expiredCount',
-      ])
+      .select(['COUNT(CASE WHEN expiry_date > NOW() THEN 1 END) AS activeCount', 'COUNT(*) AS totalCount'])
       .from('tbl_subscription', 'us')
       .where('us.subscriberid = :userId', { userId })
       .andWhere('us.isdelete = 0')
       .getRawOne()
 
     const hasActiveSubscription = parseInt(subscriptions.activeCount) > 0
-    const hasExpiredSubscription = parseInt(subscriptions.expiredCount) > 0
+    const hasSubscription = parseInt(subscriptions.totalCount) > 0
 
     // 🔹 Determine userType
-    let userType: 'first_time' | 'subscriber' | 'expired'
+    let userType: 'first_time' | 'subscriber'
     if (hasActiveSubscription) {
       userType = 'subscriber'
-    } else if (hasExpiredSubscription) {
-      userType = 'expired'
+    } else if (hasSubscription) {
+      // Expired but still counted as having subscription
+      userType = 'subscriber'
     } else {
       userType = 'first_time'
     }
@@ -46,7 +103,7 @@ export async function getUserType(userId?: number) {
     // 🔹 Check referral code
     const subscriber = await ds
       .createQueryBuilder()
-      .select('s.referralcode AS referralcode ')
+      .select('s.referralcode AS referralcode')
       .from('tbl_subscriber', 's')
       .where('s.id = :userId', { userId })
       .getRawOne()
@@ -55,8 +112,7 @@ export async function getUserType(userId?: number) {
 
     return {
       userType,
-      hasActiveSubscription,
-      hasExpiredSubscription,
+      hasSubscription,
       isReferral,
     }
   } catch (error) {

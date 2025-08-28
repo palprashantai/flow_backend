@@ -10,7 +10,7 @@ export const dataSourceOptions: DataSourceOptions = {
   database: process.env.MYSQL_DATABASE,
   port: +(process.env.MYSQL_PORT || 3306),
   synchronize: false,
-  logging: true,
+  logging: false,
   entities: ['dist/modules/**/*.entity.js'],
   charset: 'utf8mb4',
   timezone: '+00:00',

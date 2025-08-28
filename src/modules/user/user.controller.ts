@@ -1,4 +1,4 @@
-import { Body, Controller, Get, InternalServerErrorException, Param, Post, Query, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, InternalServerErrorException, Param, Post, Query, UnauthorizedException } from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { UserService } from './user.service'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
@@ -89,6 +89,32 @@ export class UserController {
         status: 'error',
         message: error.message || 'Server error occurred',
       }
+    }
+  }
+
+    @Post('registerReferral')
+  @Auth()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'NEW: Register Referral Code',
+    description: `
+  Generates and saves a referral code for the logged-in subscriber.
+  - Requires Token
+  - Updates subscriber record with a unique referral code
+  `,
+  })
+  @ApiResponse({ status: 200, description: 'Referral code registered successfully' })
+  async registerReferral(@GetUserId('id') userId: number) {
+    if (!userId) throw new UnauthorizedException('Invalid user token')
+
+    try {
+      const result = await this.userService.registerReferral(userId)
+      return {
+        message: 'Referral code registered successfully',
+        data: result,
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Failed to register referral code')
     }
   }
 

@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common'
 import axios from 'axios'
-import { CreatePlanDto, CreatePortfolioOrderDto, CreateSubscriptionDto, CreateTransactionDto } from './payment.dto'
+import { CreatePlanDto, CreatePortfolioOrderDto, CreateSubscriptionDto, CreateTransactionDto, VerifyOtpDto } from './payment.dto'
 import { createAuthToken } from './lib/auth.token'
 import Razorpay from 'razorpay'
 import { DataSource } from 'typeorm'
@@ -800,5 +800,47 @@ export class PaymentService {
     }
 
     return subscriptionid
+  }
+
+  async verifyOtp(dto: VerifyOtpDto) {
+    const { usermobile, otp } = dto
+
+    if (!usermobile || !otp) {
+      return { success: false, message: 'Error Validating OTP' }
+    }
+
+    try {
+      const otpRecords = await this.dataSource
+        .createQueryBuilder()
+        .select('*')
+        .from('tbl_otpbox', 'o')
+        .where('o.mobileno = :usermobile', { usermobile })
+        .andWhere('o.otpnumber = :otp', { otp })
+        .orderBy('o.id', 'DESC')
+        .limit(1)
+        .getRawMany()
+
+      if (!otpRecords.length) {
+        return { success: false, message: 'Invalid OTP' }
+      }
+
+      const subscriber = await getUserBy({ mobileno: usermobile }, ['id'])
+      // 🔹 3. Insert into tbl_subscriber_acceptance
+      await this.dataSource
+        .createQueryBuilder()
+        .insert()
+        .into('tbl_subscriber_acceptance')
+        .values({
+          subscriberid: subscriber.id,
+          accepted_on: new Date(),
+          source: 4, // pass 1/2/3/4 based on request
+        })
+        .execute()
+
+      return { success: true, message: 'OTP verified' }
+    } catch (error) {
+      console.error('Error verifying OTP for KYC:', error)
+      return { success: false, message: 'Internal Server Error' }
+    }
   }
 }

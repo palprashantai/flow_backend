@@ -29,18 +29,18 @@ export function setupSwagger(app: INestApplication) {
     .setContact('StreetFolios Support', 'https://www.streetfolios.com/support', 'support@streetfolios.com')
     .addTag('Authentication', 'User authentication and authorization')
     .addTag('User', 'User management and profile management')
-    .addTag('Setting', 'App setting')
     .addTag('Portfolio', 'Portfolio management and insights')
     .addTag('Payment', 'Smallcase and Razorpay investment and payment')
+    .addTag('Setting', 'App setting')
     .build()
 
   const document = SwaggerModule.createDocument(app, options, {
     include: [
       AuthModule,
       UserModule,
-      SettingModule,
       PortfolioModule,
       PaymentModule,
+      SettingModule,
 
       // Add your actual modules here
       // AuthModule,
