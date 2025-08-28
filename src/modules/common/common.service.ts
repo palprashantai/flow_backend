@@ -46,8 +46,6 @@ export class CommonService {
         source: 'API',
       })
 
-      console.log('Sending SMS to:', payload)
-
       await axios.post(url, payload.toString(), {
         headers: {
           'api-key': config.sms_apikey,

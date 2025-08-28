@@ -132,35 +132,7 @@ export class PortfolioDetailReposistory {
     }
   }
 
-  async getSegmentDataRaw(serviceId: number) {
-    try {
-      const segmentQuery = `
-        SELECT 
-          seg.id AS segment_id,
-          seg.segment_name,
-          srv.id AS service_id,
-          sub.id AS sub_id,
-          srv.min_investment,
-          sub.credits,
-          sub.credits_price,
-          sub.stype,
-          sub.productid
-        FROM tbl_segment seg
-        LEFT JOIN tbl_services srv ON srv.segid = seg.id
-        LEFT JOIN tbl_services_sub sub ON sub.sid = srv.id AND sub.device_type = 0 AND sub.isdelete = 0
-        WHERE seg.type = 1
-          AND srv.isdelete = 0
-          AND sub.isdelete = 0
-          AND srv.id = ?
-        ORDER BY seg.segment_name ASC, srv.sort_order ASC
-      `
 
-      return await this.dataSource.query(segmentQuery, [serviceId])
-    } catch (error) {
-      logger.error('Error fetching segment data:', error)
-      throw error
-    }
-  }
 
   async getOtherServices(serviceId: number) {
     try {
@@ -220,7 +192,9 @@ export class PortfolioDetailReposistory {
       return await this.dataSource
         .createQueryBuilder()
         .select('pm.id', 'id')
+        .addSelect('pm.heading', 'heading')
         .addSelect('pm.message', 'message')
+        .addSelect('pm.created_by', 'created_by')
         .addSelect('pm.created_on', 'created_on')
         .from('tbl_portfolio_messages', 'pm')
         .where('pm.service_id = :serviceId', { serviceId })
@@ -258,38 +232,7 @@ export class PortfolioDetailReposistory {
     return html
   }
 
-  async buildSegmentData(segmentsRaw: any[]) {
-    try {
-      const map = {}
-      for (const item of segmentsRaw) {
-        if (!map[item.segment_id]) {
-          map[item.segment_id] = {
-            segment_id: item.segment_id,
-            segment_name: item.segment_name,
-            min_investment: item.min_investment,
-            services: {},
-          }
-        }
-        const services = map[item.segment_id].services
-        if (!services[item.service_id]) {
-          services[item.service_id] = {
-            service_id: item.service_id,
-            plans: [],
-          }
-        }
-        services[item.service_id].plans.push({
-          id: item.sub_id,
-          planId: item.productid,
-          title: item.stype === 0 ? `${item.credits} Credits` : `${item.credits} ${item.credits === 1 ? 'Month' : 'Months'}`,
-          price: `₹${Number(item.credits_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
-        })
-      }
-      return Object.values(map)
-    } catch (error) {
-      logger.error('Error building segment data:', error)
-      throw error
-    }
-  }
+
 
   async buildSegmentCompositionNew(portfolioData: any[]) {
     try {
