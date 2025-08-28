@@ -27,6 +27,7 @@ export async function getUserType(userId?: number) {
       ])
       .from('tbl_subscription', 'us')
       .where('us.subscriberid = :userId', { userId })
+      .andWhere('us.isdelete = 0')
       .getRawOne()
 
     const hasActiveSubscription = parseInt(subscriptions.activeCount) > 0
