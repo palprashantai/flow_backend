@@ -5,22 +5,34 @@ import { SettingModule } from 'modules/setting/setting.module'
 import { PortfolioModule } from 'modules/portfolio/portfolio.module'
 import { UserModule } from 'modules/user/user.module'
 import { PaymentModule } from 'modules/payment/payment.module'
+import { SmallcaseModule } from 'modules/smallcase/smallcase.module'
+import { ReferralModule } from 'modules/referral/referral.module'
+
+const releaseNotes = `
+       ### 🆕 Payment API Updates — 2025-08-28
+           ✅ Updated Payment Endpoints:
+              - GET appApi/smallcase/order                  — Retrieve existing orders 
+              - POST appApi/smallcase/transaction           — Create a new transaction
+              - POST appApi/smallcase/fetchtoken            — Fetch Razorpay token
+              - POST appApi/auth/verifyOtp                  — Verify OTP for KYC
+              - POST appApi/auth/send-otp                   — Send OTP for KYC
+
+`
 
 export function setupSwagger(app: INestApplication) {
   const options = new DocumentBuilder()
     .setTitle('STREETFOLIOS API DOCUMENTATION')
     .setDescription(
       `
-        This is StreetFolios API documentation - Your gateway to data-driven investment research and analysis.
-        
-        StreetFolios is a SEBI-Registered Research Analyst (INH000017082) founded in 2016, dedicated to supporting 
-        Indian retail traders in achieving financial independence. Our platform offers comprehensive data-driven research 
-        encompassing various stock market strategies, including technical and fundamental analysis, helping clients make 
-        informed investment decisions.
-        
-        Our APIs are organized around REST principles, featuring secure endpoints with standard resource-oriented URLs, 
-        form-encoded request bodies, JSON-encoded responses, and standard HTTP response codes. These APIs can be easily 
-        integrated with any platform or app to provide seamless access to our research and analytics capabilities.`
+      This is StreetFolios API documentation - Your gateway to data-driven investment research and analysis.
+      
+      StreetFolios is a SEBI-Registered Research Analyst (INH000017082) founded in 2016, dedicated to supporting 
+      Indian retail traders in achieving financial independence. Our platform offers comprehensive data-driven research 
+      encompassing various stock market strategies, including technical and fundamental analysis, helping clients make 
+      informed investment decisions.
+
+      ${releaseNotes}  <!-- Add release notes here -->
+    `
     )
     .setVersion('1.0')
     .addBearerAuth()
@@ -31,53 +43,18 @@ export function setupSwagger(app: INestApplication) {
     .addTag('User', 'User management and profile management')
     .addTag('Portfolio', 'Portfolio management and insights')
     .addTag('Payment', 'Smallcase and Razorpay investment and payment')
+    .addTag('Smallcase', 'Smallcase investment and  payment ')
+    .addTag('Referral', 'Referral and wallet program management')
     .addTag('Setting', 'App setting')
     .build()
 
   const document = SwaggerModule.createDocument(app, options, {
-    include: [
-      AuthModule,
-      UserModule,
-      PortfolioModule,
-      PaymentModule,
-      SettingModule,
-
-      // Add your actual modules here
-      // AuthModule,
-      // UserModule,
-      // ResearchModule,
-      // StockAnalysisModule,
-      // PortfolioModule,
-      // MarketDataModule,
-      // WatchlistModule,
-      // AlertModule,
-      // SubscriptionModule,
-      // AnalyticsModule,
-      // TradingStrategyModule,
-      // RiskManagementModule,
-      // ReportModule,
-      // ConfigModule,
-    ],
+    include: [AuthModule, UserModule, PortfolioModule, PaymentModule, SmallcaseModule, ReferralModule, SettingModule],
   })
 
   if (document.components?.securitySchemes) {
-    delete document.components.securitySchemes['bearerAuth'] // Remove the default Bearer Authorization
+    delete document.components.securitySchemes['bearerAuth']
   }
 
-  // const theme = new SwaggerTheme('v3')
-  // const themeOptions = {
-  //   explorer: false,
-  //   customCss: `
-  //   .swagger-ui .model .property{
-  //     display: none
-  //   }
-  //   .swagger-ui .topbar {
-  //     background-color: #1f2937;
-  //   }
-  //   .swagger-ui .topbar .download-url-wrapper .select-label {
-  //     color: #ffffff;
-  //   }
-  // `,
-  // }
   SwaggerModule.setup('api-docs', app, document)
 }

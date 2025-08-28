@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, InternalServerErrorException, Post } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { AuthService } from './auth.service'
-import { GetOtpNewDto, OtpVerificationDto, RegisterDto } from './auth.dto'
+import { GetOtpNewDto, OtpVerificationDto, RegisterDto, VerifyOtpDto } from './auth.dto'
 import { Auth, GetUserId } from './auth.guard'
 
 @Controller('appApi/auth')
@@ -96,5 +96,39 @@ export class AuthController {
   async userAcceptance(@GetUserId('id') userId: number) {
     const result = await this.authService.userAcceptance(userId)
     return result
+  }
+
+  @Post('send-otp')
+  @ApiBearerAuth()
+  @Auth()
+  @ApiOperation({ summary: 'NEW: Generate and send OTP for kyc' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  @ApiResponse({ status: 400, description: 'Mobile number is required or invalid' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  async sendOtp(@GetUserId('id') userId: number) {
+    try {
+      await this.authService.sendOtp(userId)
+      return {
+        success: true,
+        message: 'OTP sent successfully',
+      }
+    } catch (error) {
+      throw new InternalServerErrorException(error.message)
+    }
+  }
+
+  @Post('verifyOtp')
+  @ApiOperation({ summary: 'Verify OTP for KYC' })
+  @ApiBearerAuth()
+  @Auth()
+  @ApiResponse({
+    status: 200,
+    description: 'OTP verification result',
+    schema: {
+      example: { success: true, message: 'OTP verified' },
+    },
+  })
+  async verifyOtp(@GetUserId('id') userId: number, @Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto, userId)
   }
 }

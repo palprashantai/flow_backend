@@ -1,7 +1,5 @@
 import { HttpException, HttpStatus, Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common'
-import axios from 'axios'
-import { CreatePlanDto, CreatePortfolioOrderDto, CreateSubscriptionDto, CreateTransactionDto, VerifyOtpDto } from './payment.dto'
-import { createAuthToken } from './lib/auth.token'
+import { CreatePlanDto, CreatePortfolioOrderDto, CreateSubscriptionDto } from './payment.dto'
 import Razorpay from 'razorpay'
 import { DataSource } from 'typeorm'
 import dayjs from 'dayjs'
@@ -11,8 +9,7 @@ import { getUserBy } from 'modules/auth/auth.repository'
 @Injectable()
 export class PaymentService {
   private readonly logger = logger
-  private readonly gatewayName = process.env.SMALLCASE_GATEWAY_NAME
-  private readonly gatewayApiSecret = process.env.SMALLCASE_API_SECRET
+
   private readonly razorpay: Razorpay
 
   constructor(private readonly dataSource: DataSource) {
@@ -34,16 +31,6 @@ export class PaymentService {
       this.logger.error('Failed to initialize Razorpay', error)
       throw new Error('Failed to initialize Razorpay client')
     }
-
-    // Validate Smallcase config
-    if (!this.gatewayName || !this.gatewayApiSecret) {
-      this.logger.error('Missing Smallcase configuration', {
-        hasGatewayName: !!this.gatewayName,
-        hasGatewaySecret: !!this.gatewayApiSecret,
-      })
-    } else {
-      console.log('Smallcase configuration validated successfully')
-    }
   }
 
   async getSubscriberDetails(subscriberid: string): Promise<{ subscriberid: string; authid: string } | null> {
@@ -56,85 +43,6 @@ export class PaymentService {
       .where('s.isdelete = 0 AND s.subscriberid = :subscriberid', { subscriberid })
       .getRawOne<{ subscriberid: string; authid: string }>()
     return result ?? null
-  }
-
-  async getLatestTransactionData(): Promise<any> {
-    try {
-      const record = await this.dataSource
-        .createQueryBuilder()
-        .select('*')
-        .from('tbl_smallcase_apilog', 'log')
-        // .where('log.transactionid = :transactionid', { transactionid })
-        .orderBy('log.id', 'DESC')
-        .limit(1)
-        .getRawOne()
-
-      if (!record) {
-        throw new NotFoundException('Transaction not found')
-      }
-
-      const webhookData = JSON.parse(record.message)
-      return webhookData
-    } catch (err) {
-      this.logger.error('getTransactionData error:', err)
-      throw new InternalServerErrorException('Failed to load transaction')
-    }
-  }
-
-  async createTransaction(dto: CreateTransactionDto, subscriberid?: number): Promise<{ success: boolean; data?: any; error?: string }> {
-    const subscriberDetails = await getUserBy({ id: subscriberid })
-
-    const { intent = 'TRANSACTION', orderConfig } = dto
-    const authToken = createAuthToken(subscriberDetails?.authid) // creates guest token if no authId
-
-    try {
-      const response = await axios.post(
-        `https://gatewayapi.smallcase.com/gateway/${process.env.SMALLCASE_GATEWAY_NAME}/transaction`,
-        { intent, orderConfig },
-        {
-          headers: {
-            'x-gateway-secret': process.env.SMALLCASE_API_SECRET as string,
-            'x-gateway-authtoken': authToken,
-          },
-        }
-      )
-      const transactionId = response.data?.data?.transactionId // adjust to your API response structure
-      const serviceId = dto?.serviceId
-      const orderType = dto?.ordertype === 1 ? 1 : 0
-
-      if (transactionId && serviceId) {
-        await this.dataSource
-          .createQueryBuilder()
-          .insert()
-          .into('tbl_smallcase_order')
-          .values({
-            transactionid: transactionId,
-            serviceid: serviceId,
-            subscriberid: subscriberDetails.id || null,
-            status: 0,
-            broker: null,
-            ordertype: orderType,
-            created_on: () => 'NOW()',
-          })
-          .execute()
-      }
-
-      return { success: true, data: response.data?.data }
-    } catch (error: any) {
-      console.warn('Transaction API failed:', error.response?.data || error.message)
-      return { success: false, error: error.response?.data || error.message }
-    }
-  }
-
-  async getToken(userId?: number) {
-    let subscriberDetails: any = null
-
-    if (userId) {
-      subscriberDetails = await getUserBy({ id: userId })
-    }
-    // Will create guest token if subscriberDetails?.authid is missing
-    const token = createAuthToken(subscriberDetails?.authid)
-    return { token }
   }
 
   async createPlan(dto: CreatePlanDto) {
@@ -800,47 +708,5 @@ export class PaymentService {
     }
 
     return subscriptionid
-  }
-
-  async verifyOtp(dto: VerifyOtpDto) {
-    const { usermobile, otp } = dto
-
-    if (!usermobile || !otp) {
-      return { success: false, message: 'Error Validating OTP' }
-    }
-
-    try {
-      const otpRecords = await this.dataSource
-        .createQueryBuilder()
-        .select('*')
-        .from('tbl_otpbox', 'o')
-        .where('o.mobileno = :usermobile', { usermobile })
-        .andWhere('o.otpnumber = :otp', { otp })
-        .orderBy('o.id', 'DESC')
-        .limit(1)
-        .getRawMany()
-
-      if (!otpRecords.length) {
-        return { success: false, message: 'Invalid OTP' }
-      }
-
-      const subscriber = await getUserBy({ mobileno: usermobile }, ['id'])
-      // 🔹 3. Insert into tbl_subscriber_acceptance
-      await this.dataSource
-        .createQueryBuilder()
-        .insert()
-        .into('tbl_subscriber_acceptance')
-        .values({
-          subscriberid: subscriber.id,
-          accepted_on: new Date(),
-          source: 4, // pass 1/2/3/4 based on request
-        })
-        .execute()
-
-      return { success: true, message: 'OTP verified' }
-    } catch (error) {
-      console.error('Error verifying OTP for KYC:', error)
-      return { success: false, message: 'Internal Server Error' }
-    }
   }
 }

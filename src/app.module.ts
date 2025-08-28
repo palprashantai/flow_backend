@@ -16,6 +16,8 @@ import { CacheModule } from 'cache.module'
 import { PortfolioModule } from 'modules/portfolio/portfolio.module'
 import { UserModule } from 'modules/user/user.module'
 import { PaymentModule } from 'modules/payment/payment.module'
+import { SmallcaseModule } from 'modules/smallcase/smallcase.module'
+import { ReferralModule } from 'modules/referral/referral.module'
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { PaymentModule } from 'modules/payment/payment.module'
     CommonModule,
     PortfolioModule,
     PaymentModule,
+    SmallcaseModule,
+    ReferralModule,
     CacheModule,
   ],
   controllers: [AppController],

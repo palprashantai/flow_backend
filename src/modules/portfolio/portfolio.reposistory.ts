@@ -139,21 +139,11 @@ export async function getMarketToday() {
       const change = parseFloat(row.priceChange)
       const changePercent = parseFloat(row.changePercent)
 
-      let marketMode: 'Bullish' | 'Bearish' | 'Neutral'
-      if (change > 0) {
-        marketMode = 'Bullish'
-      } else if (change < 0) {
-        marketMode = 'Bearish'
-      } else {
-        marketMode = 'Neutral'
-      }
-
       return {
         instrument: row.instrument,
         value,
         change,
         changePercent,
-        marketMode,
       }
     })
   } catch (error) {

@@ -1,7 +1,6 @@
 import { IsArray, IsIn, IsInt, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { Length } from 'class-validator'
 
 export class SecurityDto {
   @ApiProperty({ example: 'IDEA' })
@@ -52,33 +51,6 @@ export class OrderConfigDto {
   meta?: OrderMetaDto
 }
 
-export class CreateTransactionDto {
-  @ApiProperty({ example: 1 })
-  @IsNumber()
-  @IsNotEmpty()
-  serviceId: number
-
-  @ApiProperty({
-    example: 0,
-    enum: [0, 1],
-    description: 'Order type: 0 = investnow, 1 = rebalance',
-  })
-  @IsIn([0, 1])
-  @IsNumber()
-  @IsNotEmpty()
-  ordertype: number
-
-  @ApiProperty({ example: 'TRANSACTION' })
-  @IsString()
-  @IsNotEmpty()
-  intent: string
-
-  @ApiProperty({ type: OrderConfigDto })
-  @ValidateNested()
-  @Type(() => OrderConfigDto)
-  @IsNotEmpty()
-  orderConfig: OrderConfigDto
-}
 
 //
 // ========== Subscription DTO
@@ -172,15 +144,3 @@ export class CreatePortfolioOrderDto {
 }
 
 
-export class VerifyOtpDto {
-  @ApiProperty({ example: '9876543210', description: 'Mobile number of the user' })
-  @IsNotEmpty()
-  @IsString()
-  @Length(10, 10)
-  usermobile: string
-
-  @ApiProperty({ example: '123456', description: 'OTP received by the user' })
-  @IsNotEmpty()
-  @IsString()
-  otp: string
-}

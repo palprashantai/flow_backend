@@ -1,20 +1,14 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
 import { DataSource, In, Not, Repository } from 'typeorm'
 
 import { JwtPayload } from './auth.interface'
 import { ConfigService } from '@nestjs/config'
-import { getNextSubscriberID, getUtmByDeviceId, insertOtp, insertOtpLog } from './auth.repository'
+import { getNextSubscriberID, getUserBy, getUtmByDeviceId, insertOtp, insertOtpLog } from './auth.repository'
 import { getCurrentDateTime, sanitize, sanitizeMobile } from 'helper'
 import { OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreation } from './auth.entity'
-import { RegisterDto } from './auth.dto'
+import { RegisterDto, VerifyOtpDto } from './auth.dto'
 import { CommonService } from 'modules/common/common.service'
 import { logger } from 'middlewares/logger.middleware'
 
@@ -189,6 +183,35 @@ export class AuthService {
           utm_medium: logEvent.utm_medium || '',
         }),
       ])
+
+      const user = await getUserBy(
+        { referralcode: logEvent.utm_source },
+        ['id'] // optional selected fields
+      )
+
+      const result = await this.dataSource
+        .createQueryBuilder()
+        .select('config.referral_amount', 'referral_amount')
+        .from('tbl_configuration', 'config')
+        .getRawOne()
+
+      const referralAmount = result ? Number(result.referral_amount) : 0
+
+
+      await this.dataSource
+        .createQueryBuilder()
+        .insert()
+        .into('tbl_referral_info_folio')
+        .values({
+          sub_id: sub.id,
+          referral_id: user.id || 0,
+          referral_code: logEvent.utm_source,
+          amount: referralAmount,
+          status: 0,
+          updated_on: currentTime,
+          datetime: currentTime,
+        })
+        .execute()
 
       usertype = 1
       this.logger.info(`New subscriber created: ${subscriberid}`)
@@ -410,5 +433,74 @@ export class AuthService {
     return assignedTo
   }
 
+  async sendOtp(userId: number): Promise<void> {
+    const subscriber = await this.subscriberRepo.findOne({
+      where: {
+        id: userId,
+      },
+    })
 
+    // ✅ OTP Generation (4 digits)
+    const otp = Math.floor(1000 + Math.random() * 9000)
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
+
+    this.logger.info(`Generated OTP ${otp} for mobile ${subscriber.mobileno}`)
+
+    await insertOtpLog(subscriber.mobileno, {
+      MobileNo: subscriber.mobileno,
+      DeviceId: subscriber.deviceid,
+    })
+
+    await insertOtp(subscriber.mobileno, otp, now)
+
+    const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yqoW/F5XuOH`
+    this.logger.debug(`Sending SMS to ${subscriber.mobileno}: ${message}`)
+    await this.commonService.sendSms(subscriber.mobileno, message)
+  }
+
+  async verifyOtp(dto: VerifyOtpDto, userId: number) {
+    const { otp } = dto
+
+    const user = await getUserBy(
+      { id: userId },
+      ['mobileno'] // optional selected fields
+    )
+    const mobileno = user.mobileno
+    if (!mobileno || !otp) {
+      return { success: false, message: 'Error Validating OTP' }
+    }
+
+    try {
+      const otpRecords = await this.dataSource
+        .createQueryBuilder()
+        .select('*')
+        .from('tbl_otpbox', 'o')
+        .where('o.mobileno = :usermobile', { usermobile: mobileno })
+        .andWhere('o.otpnumber = :otp', { otp })
+        .orderBy('o.id', 'DESC')
+        .limit(1)
+        .getRawMany()
+
+      if (!otpRecords.length) {
+        return { success: false, message: 'Invalid OTP' }
+      }
+
+      // 🔹 3. Insert into tbl_subscriber_acceptance
+      await this.dataSource
+        .createQueryBuilder()
+        .insert()
+        .into('tbl_subscriber_acceptance')
+        .values({
+          subscriberid: userId,
+          accepted_on: new Date(),
+          source: 4, // pass 1/2/3/4 based on request
+        })
+        .execute()
+
+      return { success: true, message: 'OTP verified' }
+    } catch (error) {
+      console.error('Error verifying OTP for KYC:', error)
+      return { success: false, message: 'Internal Server Error' }
+    }
+  }
 }

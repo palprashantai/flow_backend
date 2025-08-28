@@ -1,19 +1,12 @@
 import { Body, Controller, Get, Param, Post, UnauthorizedException } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiExcludeEndpoint } from '@nestjs/swagger'
 
-import {
-  CreateTransactionDto,
-  CreateSubscriptionDto,
-  CreatePlanDto,
-  CreateOrderDto,
-  CreatePortfolioOrderDto,
-  VerifyOtpDto,
-} from './payment.dto'
+import { CreateSubscriptionDto, CreatePlanDto, CreateOrderDto, CreatePortfolioOrderDto } from './payment.dto'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { PaymentService } from './payment.service'
 
 @ApiTags('Payment')
-@Controller('payment')
+@Controller('appApi/payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
@@ -40,61 +33,6 @@ export class PaymentController {
       throw new UnauthorizedException('Invalid user token')
     }
     return this.paymentService.getRazorPayKey(userId)
-  }
-
-  @Get('smallcase/order')
-  @Auth()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Fetch latest Smallcase transaction data' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns parsed JSON from latest smallcase webhook',
-    schema: {
-      example: {
-        success: true,
-        message: 'Latest order retrieved successfully',
-        result: {
-          order_id: 'abc123',
-          status: 'completed',
-          amount: 5000,
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'No transactions found' })
-  @ApiResponse({ status: 500, description: 'Failed to load latest transaction' })
-  async getLatestTransaction() {
-    const result = await this.paymentService.getLatestTransactionData()
-
-    return {
-      success: true,
-      message: 'Latest order retrieved successfully',
-      result,
-    }
-  }
-
-  @Post('smallcase/transaction')
-  @Auth()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a Smallcase transaction (Razorpay)' })
-  @ApiResponse({ status: 201, description: 'Transaction created successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
-  async createTransaction(@Body() dto: CreateTransactionDto, @GetUserId('id') userId: number) {
-    return this.paymentService.createTransaction(dto, userId)
-  }
-
-  @Get('smallcase/fetchtoken')
-  @Auth()
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Generate JWT token',
-    description: 'Returns a JWT token for the given authId or a guest token if not provided.',
-  })
-  @ApiResponse({ status: 200, description: 'Token generated successfully' })
-  @ApiResponse({ status: 500, description: 'Failed to generate token' })
-  getToken(@GetUserId('id') userId?: number) {
-    return this.paymentService.getToken(userId)
   }
 
   @Post('razorpay/subscription')
@@ -183,19 +121,5 @@ export class PaymentController {
   @ApiResponse({ status: 400, description: 'Invalid input or missing token' })
   async paymentSuccessPortfolio(@Body() dto: CreatePortfolioOrderDto, @GetUserId('id') userId: number) {
     return this.paymentService.paymentSuccessPortfolio(dto, userId)
-  }
-
-  @Post('verifyOtp')
-  @ApiOperation({ summary: 'Verify OTP for KYC' })
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'OTP verification result',
-    schema: {
-      example: { success: true, message: 'OTP verified' },
-    },
-  })
-  async verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.paymentService.verifyOtp(dto)
   }
 }

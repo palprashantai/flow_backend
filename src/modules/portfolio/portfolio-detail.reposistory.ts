@@ -132,8 +132,6 @@ export class PortfolioDetailReposistory {
     }
   }
 
-
-
   async getOtherServices(serviceId: number) {
     try {
       return await this.dataSource.query(
@@ -195,6 +193,7 @@ export class PortfolioDetailReposistory {
         .addSelect('pm.heading', 'heading')
         .addSelect('pm.message', 'message')
         .addSelect('pm.created_by', 'created_by')
+        .addSelect('pm.file', 'file')
         .addSelect('pm.created_on', 'created_on')
         .from('tbl_portfolio_messages', 'pm')
         .where('pm.service_id = :serviceId', { serviceId })
@@ -231,8 +230,6 @@ export class PortfolioDetailReposistory {
     }
     return html
   }
-
-
 
   async buildSegmentCompositionNew(portfolioData: any[]) {
     try {

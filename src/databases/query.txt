@@ -52,3 +52,31 @@ CREATE TABLE `tbl_app_trades` (
     `created_on` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE IF NOT EXISTS `tbl_referral_info_folio` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `referral_id` INT NOT NULL,
+  `referral_code` VARCHAR(15) DEFAULT NULL,
+  `sub_id` INT DEFAULT 0,
+  `amount` INT DEFAULT 0,
+  `status` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0 - Installed / 1 - Purchased',
+  `updated_on` DATETIME DEFAULT NULL,
+  `datetime` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE IF NOT EXISTS `tbl_wallet_folio` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `subscriberid` INT NOT NULL DEFAULT 0,
+  `referid` INT NOT NULL DEFAULT 0,
+  `amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `type` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0 - Credit / 1 - Debit',
+  `created_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+ALTER TABLE streetgains.tbl_configuration
+ADD COLUMN referral_amount DECIMAL(10,2) NOT NULL DEFAULT 100;

@@ -45,3 +45,10 @@ export class RegisterDto {
   @IsEmail()
   email: string
 }
+
+export class VerifyOtpDto {
+  @ApiProperty({ example: '123456', description: 'OTP received by the user' })
+  @IsNotEmpty()
+  @IsString()
+  otp: string
+}
