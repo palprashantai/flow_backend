@@ -142,7 +142,7 @@ export class AuthService {
 
     // ✅ Check if subscriber exists
     let subscriber = await this.subscriberRepo.findOne({
-      where: { mobileno: sanitizedMobile },
+      where: { mobileno: sanitizedMobile, isdelete: 0 },
     })
 
     let subscriberid: string
