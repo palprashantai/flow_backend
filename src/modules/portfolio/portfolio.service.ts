@@ -3,7 +3,9 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 
 import {
   buildPortfolioHistoryQuery,
+  fetchAllPlanOffers,
   fetchPlansByServiceIdPortfolio,
+  fetchServiceOffers,
   fetchStocksByServiceIdPortfolio,
   getAllInsight,
   getAvailableDurationsForPortfolio,
@@ -295,31 +297,44 @@ export class PortfolioService {
   }
 
   async getPortfolioPlans(service_id: number) {
-    if (!service_id) {
-      throw new BadRequestException('Service ID is required.')
-    }
+    if (!service_id) throw new BadRequestException('Service ID is required.')
 
     try {
       const plans = await fetchPlansByServiceIdPortfolio(service_id)
 
-      const formattedPlans = plans.map((plan: any) => ({
-        id: plan.id,
-        planid: plan.productid,
-        title: plan.credits === 1 ? `${plan.credits} Month` : `${plan.credits} Months`,
-        price: plan.credits_price,
-      }))
+      // Fetch service-wide and plan-specific offers once
+      const serviceOffers = await fetchServiceOffers(service_id)
+      const planOffers = await fetchAllPlanOffers()
 
-      const dos = ['Seamlessly place orders in 1 click', 'Get regular re-balance updates']
+      // Attach ONLY plan-specific offers to plans
+      const formattedPlans = plans.map((p: any) => {
+        const planSpecific = planOffers.filter((o: any) => o.planid === p.productid)
 
-      const donts = ['Easily start SIPs for disciplined investing']
+        return {
+          id: p.id,
+          planid: p.productid,
+          title: `${p.credits} Month${p.credits > 1 ? 's' : ''}`,
+          price: p.credits_price,
+          offers: planSpecific.map((o: any) => ({
+            code: o.offercode,
+            name: o.offername,
+            value: o.offervalue,
+          })),
+        }
+      })
 
       return {
         success: true,
         message: 'Plans retrieved successfully',
-        result: { plans: formattedPlans, dos, donts },
+        result: {
+          plans: formattedPlans,
+          service_offers: serviceOffers, // separate service-wide offers
+          dos: ['Seamlessly place orders in 1 click', 'Get regular re-balance updates'],
+          donts: ['Easily start SIPs for disciplined investing'],
+        },
       }
-    } catch (error) {
-      console.error('Error fetching portfolio plans:', error)
+    } catch (err) {
+      console.error('Error fetching portfolio plans:', err)
       throw new InternalServerErrorException('Internal Server Error')
     }
   }

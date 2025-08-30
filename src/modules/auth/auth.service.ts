@@ -185,7 +185,7 @@ export class AuthService {
       ])
 
       const user = await getUserBy(
-        { referralcode: logEvent.utm_source },
+        { referralcode: logEvent.utm_campaign },
         ['id'] // optional selected fields
       )
 
@@ -197,7 +197,6 @@ export class AuthService {
 
       const referralAmount = result ? Number(result.referral_amount) : 0
 
-
       await this.dataSource
         .createQueryBuilder()
         .insert()
@@ -205,7 +204,7 @@ export class AuthService {
         .values({
           sub_id: sub.id,
           referral_id: user.id || 0,
-          referral_code: logEvent.utm_source,
+          referral_code: logEvent.utm_campaign,
           amount: referralAmount,
           status: 0,
           updated_on: currentTime,

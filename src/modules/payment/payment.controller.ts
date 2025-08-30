@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Post, UnauthorizedException } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiExcludeEndpoint } from '@nestjs/swagger'
+import { BadRequestException, Body, Controller, Get, Param, Post, UnauthorizedException } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiExcludeEndpoint, ApiBody } from '@nestjs/swagger'
 
 import { CreateSubscriptionDto, CreatePlanDto, CreateOrderDto, CreatePortfolioOrderDto } from './payment.dto'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
@@ -112,6 +112,30 @@ export class PaymentController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getOrderById(@Param('orderId') orderId: string) {
     return this.paymentService.getOrderById(orderId)
+  }
+
+  @Post('apply-offer')
+  @ApiBearerAuth()
+  @Auth()
+  @ApiOperation({ summary: 'Apply an offer to a plan' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['offerCode'],
+      properties: {
+        offerCode: { type: 'string', example: 'SGIND79' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Offer applied successfully',
+  })
+  async applyOffer(@GetUserId('id') userId: number, @Body('offerCode') offerCode: string) {
+    if (!offerCode) {
+      throw new BadRequestException('offerCode are required')
+    }
+    return this.paymentService.applyOffer(offerCode)
   }
 
   @Post('payment-success-portfolio')

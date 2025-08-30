@@ -80,3 +80,8 @@ CREATE TABLE IF NOT EXISTS `tbl_wallet_folio` (
 
 ALTER TABLE streetgains.tbl_configuration
 ADD COLUMN referral_amount DECIMAL(10,2) NOT NULL DEFAULT 100;
+
+
+ALTER TABLE streetgains.tbl_offers
+ADD COLUMN planid VARCHAR(50) NULL AFTER id;
+
