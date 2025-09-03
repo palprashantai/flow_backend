@@ -1,13 +1,40 @@
-import { Body, Controller, Get, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
-import { CreateTransactionDto } from './smallcase.dto'
+import { CreateTransactionDto, DeleteAuthResponseDto, GetAuthResponseDto, MapSmallcaseAuthDto, MapSmallcaseAuthResponseDto } from './smallcase.dto'
 import { SmallcaseService } from './smallcase.service'
 
 @ApiTags('Smallcase')
 @Controller('appApi/smallcase')
 export class SmallcaseController {
   constructor(private readonly smallcaseService: SmallcaseService) {}
+
+  @Get('auth')
+  @Auth()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get user Auth ID',
+    description: 'Retrieves the Smallcase Auth ID for the authenticated user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Auth ID retrieved successfully',
+    type: GetAuthResponseDto,
+    schema: {
+      example: {
+        success: true,
+        authId: '67b834897b7b6d05ad63f1d',
+        message: 'Auth ID retrieved successfully',
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'User not found or no Auth ID' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async getAuthId(@GetUserId('id') userId: number): Promise<GetAuthResponseDto> {
+    console.info(`getAuthId called for user: ${userId}`)
+    const result = await this.smallcaseService.getUserAuthId(userId)
+    return result
+  }
 
   @Get('order')
   @Auth()
@@ -51,6 +78,38 @@ export class SmallcaseController {
     return this.smallcaseService.createTransaction(dto, userId)
   }
 
+  @Post('map-auth')
+  @Auth()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Map Smallcase Auth Token with User Account',
+    description: 'Decodes Smallcase Auth Token to get smallcaseAuthId and maps it with user account.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Smallcase account mapped successfully',
+    type: MapSmallcaseAuthResponseDto,
+    schema: {
+      example: {
+        success: true,
+        message: 'Smallcase account mapped successfully',
+        data: {
+          smallcaseAuthId: '67b834897b7b6d05ad63f1d',
+          transactionId: 'TRX_a2f301e3ab6b4e48a68cc0a52a6abab2',
+          broker: 'groww',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid token or transaction data' })
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async mapSmallcaseAuth(@Body() dto: MapSmallcaseAuthDto, @GetUserId('id') userId: number): Promise<MapSmallcaseAuthResponseDto> {
+    console.log(`mapSmallcaseAuth called for user: ${userId}, transaction: ${dto.transactionId}`)
+    const result = await this.smallcaseService.mapSmallcaseAuthToken(dto, userId)
+    return result
+  }
+
   @Get('fetchtoken')
   @Auth()
   @ApiBearerAuth()
@@ -62,5 +121,31 @@ export class SmallcaseController {
   @ApiResponse({ status: 500, description: 'Failed to generate token' })
   getToken(@GetUserId('id') userId?: number) {
     return this.smallcaseService.getToken(userId)
+  }
+
+  @Delete('auth')
+  @Auth()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Delete user Auth ID',
+    description: 'Removes the Smallcase Auth ID from user account (disconnects Smallcase).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Auth ID deleted successfully',
+    type: DeleteAuthResponseDto,
+    schema: {
+      example: {
+        success: true,
+        message: 'Auth ID deleted successfully',
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async deleteAuthId(@GetUserId('id') userId: number): Promise<DeleteAuthResponseDto> {
+  console.log(`deleteAuthId called for user: ${userId}`)
+    const result = await this.smallcaseService.deleteUserAuthId(userId)
+    return result
   }
 }

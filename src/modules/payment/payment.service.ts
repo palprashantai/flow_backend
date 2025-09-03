@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm'
 import dayjs from 'dayjs'
 import { logger } from 'middlewares/logger.middleware'
 import { getUserBy } from 'modules/auth/auth.repository'
+import { fetchOfferByCode, fetchPlan } from 'modules/portfolio/portfolio.reposistory'
 
 @Injectable()
 export class PaymentService {
@@ -336,15 +337,6 @@ export class PaymentService {
     const today = new Date().toISOString().slice(0, 19).replace('T', ' ')
 
     try {
-      // Fetch subscriber
-      // const user = await this.dataSource
-      //   .createQueryBuilder()
-      //   .select('id, fullname, mobileno, email, assignedto')
-      //   .from('tbl_subscriber', 's')
-      //   .where('s.isdelete = 0 AND s.subscriberid = :subscriberid', { subscriberid })
-      //   .getRawOne()
-
-      // if (!user) throw new NotFoundException('No subscriber found')
       const user = await getUserBy(
         { id: userId },
         ['id', 'fullname', 'mobileno', 'email', 'assignedto'] // optional selected fields
@@ -642,6 +634,43 @@ export class PaymentService {
     } catch (err) {
       this.logger.error('Error in paymentSuccessPortfolio:', err)
       throw err
+    }
+  }
+
+  async applyOffer(offerCode: string) {
+    if (!offerCode) {
+      throw new BadRequestException('offerCode is required')
+    }
+
+    // 1️⃣ Get offer details first
+    const offer = await fetchOfferByCode(offerCode)
+    if (!offer) throw new NotFoundException('Invalid or expired offer')
+
+    // 2️⃣ Get plan details using planid & serviceid from offer
+    const plan = await fetchPlan(offer?.planid, offer?.serviceid)
+    if (!plan) throw new NotFoundException('Plan not found')
+
+    // 3️⃣ Calculate percentage discount
+    const discountPercent = offer.offervalue || 0
+    const discount = (plan.credits_price * discountPercent) / 100
+    const finalAmount = Math.max(plan.credits_price - discount, 0)
+
+    // 4️⃣ Return response
+    return {
+      success: true,
+      message: 'Offer applied successfully',
+      result: {
+        planId: offer.planid,
+        serviceId: offer.serviceid,
+        originalAmount: plan.credits_price,
+        discountPercent,
+        discount,
+        payableAmount: finalAmount,
+        appliedOffer: {
+          code: offer.offercode,
+          name: offer.offername,
+        },
+      },
     }
   }
 

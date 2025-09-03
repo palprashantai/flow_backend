@@ -23,3 +23,25 @@ export async function getWalletBySubscriber(subscriberid: number) {
     .orderBy('id', 'DESC')
     .getRawMany()
 }
+
+export async function getWalletBalanceBySubscriber(subscriberid: number) {
+  const ds = await dataSource
+  return await ds
+    .createQueryBuilder()
+    .select('SUM(wallet.amount)', 'totalBalance')
+    .from('tbl_wallet_folio', 'wallet')
+    .where('wallet.subscriberid = :subscriberid', { subscriberid })
+    .getRawOne()
+}
+
+export async function getReferralFaqs(seoId: number) {
+  const ds = await dataSource
+  return await ds
+    .createQueryBuilder()
+    .select(['id', 'title', 'description', 'faq_type'])
+    .from('tbl_seo_faq', 'faq')
+    .where('faq.isdelete = :isdelete', { isdelete: 0 })
+    .andWhere('faq.seo_id = :seoId', { seoId })
+    .orderBy('faq.id', 'ASC')
+    .getRawMany()
+}

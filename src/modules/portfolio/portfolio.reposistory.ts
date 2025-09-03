@@ -473,6 +473,61 @@ export async function fetchPlansByServiceIdPortfolio(service_id: number) {
   return plans
 }
 
+export async function fetchServiceOffers(serviceId: number) {
+  const ds = await dataSource
+  return ds.query(
+    `SELECT offercode, offername, offervalue, serviceid, planid
+     FROM tbl_offers
+     WHERE serviceid = ?`,
+    [serviceId]
+  )
+}
+
+export async function fetchAllPlanOffers() {
+  const ds = await dataSource
+  return ds.query(
+    `SELECT offercode, offername, offervalue, serviceid, planid
+     FROM tbl_offers
+     WHERE planid IS NOT NULL`
+  )
+}
+
+export async function fetchPlan(planId?: string, serviceId?: number) {
+  const ds = await dataSource
+
+  // Start base query
+  let query = `
+    SELECT id, productid, credits_price 
+    FROM tbl_services_sub 
+    WHERE isdelete = 0
+  `
+  const params: any[] = []
+
+  // Add conditions dynamically
+  if (planId) {
+    query += ` AND productid = ?`
+    params.push(planId)
+  }
+  if (serviceId) {
+    query += ` AND sid = ?`
+    params.push(serviceId)
+  }
+
+  const [plan] = await ds.query(query, params)
+  return plan
+}
+
+export async function fetchOfferByCode(offerCode: string) {
+  const ds = await dataSource
+  const [offer] = await ds.query(
+    `SELECT offercode, offername, offervalue, planid, serviceid
+     FROM tbl_offers
+     WHERE offercode = ?`,
+    [offerCode]
+  )
+  return offer
+}
+
 export async function buildPortfolioHistoryQuery(
   serviceId: number,
   options: { duration?: string; assetId?: number; limit: number; offset: number }

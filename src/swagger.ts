@@ -9,14 +9,26 @@ import { SmallcaseModule } from 'modules/smallcase/smallcase.module'
 import { ReferralModule } from 'modules/referral/referral.module'
 
 const releaseNotes = `
-       ### 🆕 Payment API Updates — 2025-08-28
-           ✅ Updated Payment Endpoints:
-              - GET appApi/smallcase/order                  — Retrieve existing orders 
-              - POST appApi/smallcase/transaction           — Create a new transaction
-              - POST appApi/smallcase/fetchtoken            — Fetch Razorpay token
-              - POST appApi/auth/verifyOtp                  — Verify OTP for KYC
-              - POST appApi/auth/send-otp                   — Send OTP for KYC
+### 🆕 Smallcase Integration & Referral APIs — 2025-09-03
 
+✅ New Smallcase Auth Management:
+  - POST /smallcase/map-auth
+    — Map Smallcase Auth Token with User Account
+  - GET /smallcase/auth  
+    — Retrieve user's Smallcase Auth ID
+  - DELETE /smallcase/auth
+    — Remove/disconnect Smallcase Auth ID
+
+✅ New Referral System:
+  - GET /referral/home
+    — Get wallet balance, referral code, and FAQs
+    — Includes promotional card text and user referral code
+
+✅ Database Updates:
+  - Modified tbl_subscriber.authid to VARCHAR(50)
+    — Now supports Smallcase Auth ID strings
+  - Enhanced wallet balance calculation
+    — Handles positive/negative amounts summation
 `
 
 export function setupSwagger(app: INestApplication) {
