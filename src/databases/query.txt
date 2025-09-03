@@ -85,3 +85,6 @@ ADD COLUMN referral_amount DECIMAL(10,2) NOT NULL DEFAULT 100;
 ALTER TABLE streetgains.tbl_offers
 ADD COLUMN planid VARCHAR(50) NULL AFTER id;
 
+
+ALTER TABLE streetgains.tbl_subscriber MODIFY COLUMN authid VARCHAR(50) NULL DEFAULT NULL;
+

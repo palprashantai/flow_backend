@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsInt, IsNotEmpty, IsNumber,  IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsArray, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 
@@ -67,21 +67,78 @@ export class CreateTransactionDto {
   @IsNotEmpty()
   ordertype: number
 
-  @ApiProperty({ example: 'TRANSACTION' })
+  @ApiProperty({ example: 'CONNECT' })
   @IsString()
   @IsNotEmpty()
   intent: string
 
-  @ApiProperty({ type: OrderConfigDto })
-  @ValidateNested()
-  @Type(() => OrderConfigDto)
+  // @ApiProperty({ type: OrderConfigDto })
+  // @ValidateNested()
+  // @Type(() => OrderConfigDto)
+  // @IsNotEmpty()
+  // orderConfig: OrderConfigDto
+}
+
+export class MapSmallcaseAuthDto {
+  @ApiProperty({
+    example: 'TRX_a2f301e3ab6b4e48a68cc0a52a6abab2',
+    description: 'Transaction ID from Smallcase',
+  })
+  @IsString()
   @IsNotEmpty()
-  orderConfig: OrderConfigDto
+  transactionId: string
+
+  @ApiProperty({
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzbWFsbGNhc2VBdXRoSWQiOiI2N2I4MzQ4OTc5YjdiNmQwNWFkNjNmMWQiLCJpYXQiOjE3NTU1MjI2MTAsImV4cCI6MTc1NTUyNjIxMH0.OyVVB6GJWmVlK9HJ6hJMrnzx9m0E8GQc3d6D9hGwqVQ',
+    description: 'Smallcase Auth Token to decode',
+  })
+  @IsString()
+  @IsNotEmpty()
+  smallcaseAuthToken: string
+
+  @ApiProperty({
+    example: 'groww',
+    description: 'Broker name',
+  })
+  @IsString()
+  @IsNotEmpty()
+  broker: string
+}
+
+export class MapSmallcaseAuthResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Smallcase account mapped successfully' })
+  message: string;
+
+  @ApiProperty({ 
+    example: {
+      smallcaseAuthId: '67b834897b7b6d05ad63f1d',
+      transactionId: 'TRX_a2f301e3ab6b4e48a68cc0a52a6abab2',
+      broker: 'groww'
+    }
+  })
+  data?: any;
 }
 
 
+export class GetAuthResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
 
+  @ApiProperty({ example: '67b834897b7b6d05ad63f1d' })
+  authId: string;
 
+  @ApiProperty({ example: 'Auth ID retrieved successfully' })
+  message: string;
+}
 
+export class DeleteAuthResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
 
-
+  @ApiProperty({ example: 'Auth ID deleted successfully' })
+  message: string;
+}

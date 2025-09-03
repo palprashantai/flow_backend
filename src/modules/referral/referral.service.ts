@@ -1,15 +1,66 @@
-import { HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { logger } from 'middlewares/logger.middleware'
 
 // import NodeCache from 'node-cache'
-import { getReferralByStatus, getWalletBySubscriber } from './referral.reposistory'
+import { getReferralByStatus, getReferralFaqs, getWalletBalanceBySubscriber, getWalletBySubscriber } from './referral.reposistory'
 import { getUserBy } from 'modules/auth/auth.repository'
+import { ReferralHomeResponseDto } from './referral.dto'
 
 @Injectable()
 export class ReferralService {
   private readonly logger = logger
 
   // constructor(@Inject('NODE_CACHE') private readonly cache: NodeCache) {}
+
+  async getReferralHomeData(userId: number): Promise<ReferralHomeResponseDto> {
+    try {
+      // Validate userId
+      if (!userId || userId <= 0) {
+        throw new BadRequestException('Valid User ID is required')
+      }
+
+      // Execute all queries in parallel for better performance
+      const [walletResult, user, faqs] = await Promise.all([
+        getWalletBalanceBySubscriber(userId),
+        getUserBy({ id: userId }, ['referralcode']),
+        getReferralFaqs(96), // Replace with actual referral seoId
+      ])
+
+      // Calculate wallet balance (handles positive/negative amounts: -10 + 90 + (-80) = 0)
+      const walletBalance = walletResult?.totalBalance ? Number(walletResult.totalBalance) : 0
+
+      // Top card promotional text
+      const topCardText = '₹100 for You. ₹100 for Your Friend.\nEarn While You Invest – Refer & Earn.'
+
+      // User referral code
+      const userReferralCode = user?.referralcode || ''
+
+      // Format FAQs response
+      const formattedFaqs = faqs.map((faq) => ({
+        id: faq.id,
+        title: faq.title,
+        description: faq.description,
+        faq_type: faq.faq_type,
+      }))
+
+      console.log(`Referral home data fetched successfully for user: ${userId}`)
+
+      return {
+        walletBalance,
+        topCardText,
+        userReferralCode,
+        faqs: formattedFaqs,
+      }
+    } catch (error) {
+      this.logger.error(`Error in getReferralHomeData for user ${userId}:`, error)
+
+      if (error instanceof BadRequestException) {
+        throw error
+      }
+
+      throw new InternalServerErrorException('Failed to fetch referral home data')
+    }
+  }
 
   async getReferralsByStatus(status: number, referral_id: number): Promise<any[]> {
     try {
