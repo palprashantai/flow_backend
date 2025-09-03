@@ -328,8 +328,9 @@ export class AuthService {
       throw new NotFoundException('Subscriber not found')
     }
 
-    const currentTime = new Date()
+    // const currentTime = new Date()
 
+    /*
     // 🔹 2. Update subscriber verification + acceptance
     subscriber.user_acceptance = currentTime
     subscriber.updated_on = currentTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -348,6 +349,7 @@ export class AuthService {
         source: 4, // pass 1/2/3/4 based on request
       })
       .execute()
+      */
 
     return {
       success: true,
