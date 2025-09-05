@@ -94,7 +94,7 @@ export class AuthService {
 
       await insertOtp(sanitizedMobile, otp, now)
 
-      const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yqoW/F5XuOH`
+      const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS ZrPVJ2XWTij`
       this.logger.debug(`Sending SMS to ${sanitizedMobile}: ${message}`)
       await this.commonService.sendSms(sanitizedMobile, message)
     }
