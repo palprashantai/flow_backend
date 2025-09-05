@@ -261,8 +261,12 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
 
     // === Investment Strategy
     if (investmentStrategy?.length) {
-      query.innerJoin('tbl_service_segment', 'ss', 'ss.serviceid = s.id')
-      query.andWhere('ss.segmentid IN (:...investmentStrategy)', { investmentStrategy })
+      // Convert investmentStrategy to numbers if they're strings
+      const strategyIds = investmentStrategy.map((id) => Number(id))
+      // Join with the segment table using the correct relationship
+      query.innerJoin('tbl_segment', 'seg', 'seg.id = s.segid')
+      // Filter by segment IDs
+      query.andWhere('seg.id IN (:...strategyIds)', { strategyIds })
     }
 
     // === Returns
@@ -298,8 +302,12 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
     }
     if (volatility?.length) countQuery.andWhere('s.volatility IN (:...volatility)', { volatility })
     if (investmentStrategy?.length) {
-      countQuery.innerJoin('tbl_service_segment', 'ss', 'ss.serviceid = s.id')
-      countQuery.andWhere('ss.segmentid IN (:...investmentStrategy)', { investmentStrategy })
+      // Convert investmentStrategy to numbers if they're strings
+      const strategyIds = investmentStrategy.map((id) => Number(id))
+      // Join with the segment table using the correct relationship
+      countQuery.innerJoin('tbl_segment', 'seg', 'seg.id = s.segid')
+      // Filter by segment IDs
+      countQuery.andWhere('seg.id IN (:...strategyIds)', { strategyIds })
     }
     if (returns?.length) countQuery.andWhere('s.investment_period IN (:...returns)', { returns })
     if (subscriptionType?.length) {
@@ -378,17 +386,33 @@ export async function getAvailableFiltersForPortfolio(): Promise<Record<string, 
       .where('s.investment_period IS NOT NULL AND s.investment_period != ""')
       .getRawMany()
 
-    // === Transform ===
+    // === Transform to requested format ===
     const availableFilters: Record<string, any[]> = {
-      volatility: volatilityRows.map((row) => row.volatility).filter((v) => !!v),
-
-      investmentStrategy: strategyRows.filter((row) => row.id && row.name).map((row) => ({ id: row.id, name: row.name })),
-
-      returns: returnsRows.map((row) => row.investmentPeriod).filter((v) => !!v),
-
-      subscriptionType: ['Free', 'Paid'],
-      investmentAmount: ['Under ₹ 5,000', 'Under ₹ 25,000', 'Under ₹ 50,000', 'Minimum Amount'],
-      cagr: ['HighToLow', 'LowToHigh'],
+      subscriptionType: [
+        { label: 'All', value: 'All' },
+        { label: 'Paid', value: 'Paid' },
+        { label: 'Free', value: 'Free' },
+      ],
+      investmentAmount: [
+        { label: 'Low to High', value: 'low_high' },
+        { label: 'High to Low', value: 'high_low' },
+      ],
+      cagr: [
+        { label: 'Low to High', value: 'low_high' },
+        { label: 'High to Low', value: 'high_low' },
+      ],
+      // Map database volatility values to the requested format
+      volatility: volatilityRows
+        .map((row) => row.volatility)
+        .filter((v) => !!v)
+        .map((v) => ({ label: v, value: v })),
+      // Map database strategy values to the requested format
+      investmentStrategy: strategyRows.filter((row) => row.id && row.name).map((row) => ({ label: row.name, value: row.id.toString() })),
+      // Map database returns values to the requested format
+      returns: returnsRows
+        .map((row) => row.investmentPeriod)
+        .filter((v) => !!v)
+        .map((v) => ({ label: v, value: v })),
     }
 
     return availableFilters
@@ -476,7 +500,7 @@ export async function fetchPlansByServiceIdPortfolio(service_id: number) {
 export async function fetchServiceOffers(serviceId: number) {
   const ds = await dataSource
   return ds.query(
-    `SELECT offercode, offername, offervalue, serviceid, planid
+    `SELECT offercode, offername, offervalue, serviceid 
      FROM tbl_offers
      WHERE serviceid = ?`,
     [serviceId]
@@ -486,7 +510,7 @@ export async function fetchServiceOffers(serviceId: number) {
 export async function fetchAllPlanOffers() {
   const ds = await dataSource
   return ds.query(
-    `SELECT offercode, offername, offervalue, serviceid, planid
+    `SELECT offercode, offername, offervalue, serviceid 
      FROM tbl_offers
      WHERE planid IS NOT NULL`
   )

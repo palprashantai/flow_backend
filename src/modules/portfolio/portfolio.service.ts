@@ -3,7 +3,6 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 
 import {
   buildPortfolioHistoryQuery,
-  fetchAllPlanOffers,
   fetchPlansByServiceIdPortfolio,
   fetchServiceOffers,
   fetchStocksByServiceIdPortfolio,
@@ -302,26 +301,17 @@ export class PortfolioService {
     try {
       const plans = await fetchPlansByServiceIdPortfolio(service_id)
 
-      // Fetch service-wide and plan-specific offers once
+      // Fetch service-wide offers only
       const serviceOffers = await fetchServiceOffers(service_id)
-      const planOffers = await fetchAllPlanOffers()
 
-      // Attach ONLY plan-specific offers to plans
-      const formattedPlans = plans.map((p: any) => {
-        const planSpecific = planOffers.filter((o: any) => o.planid === p.productid)
-
-        return {
-          id: p.id,
-          planid: p.productid,
-          title: `${p.credits} Month${p.credits > 1 ? 's' : ''}`,
-          price: p.credits_price,
-          offers: planSpecific.map((o: any) => ({
-            code: o.offercode,
-            name: o.offername,
-            value: o.offervalue,
-          })),
-        }
-      })
+      // No plan-specific offers anymore
+      const formattedPlans = plans.map((p: any) => ({
+        id: p.id,
+        planid: p.productid,
+        title: `${p.credits} Month${p.credits > 1 ? 's' : ''}`,
+        price: p.credits_price,
+        offers: [], // ✅ empty since planOffers removed
+      }))
 
       return {
         success: true,
