@@ -88,3 +88,6 @@ ADD COLUMN planid VARCHAR(50) NULL AFTER id;
 
 ALTER TABLE streetgains.tbl_subscriber MODIFY COLUMN authid VARCHAR(50) NULL DEFAULT NULL;
 
+ALTER TABLE streetgains.tbl_services
+ADD COLUMN access_price_monthly DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+ADD COLUMN service_banner VARCHAR(255) DEFAULT NULL AFTER access_price_monthly;
