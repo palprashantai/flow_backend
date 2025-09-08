@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common'
 import { SettingService } from './setting.service'
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
-import { CreateAppEventLogDto, UpdateNotificationDto } from './setting.dto'
+import { ComplianceItemDto, CreateAppEventLogDto, UpdateNotificationDto } from './setting.dto'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { getFaqList, streetfoliosInfo } from './setting.reposistory'
 
@@ -89,6 +89,12 @@ export class SettingController {
   @ApiOperation({ summary: 'Get Support Info for Subscriber' })
   async getSupport(@GetUserId('id') userId?: number) {
     return this.settingService.getSupport(userId)
+  }
+
+  @Get('compliance')
+  @ApiBearerAuth()
+  getComplianceItems(): ComplianceItemDto[] {
+    return this.settingService.getComplianceItems()
   }
 
   @Get('getFinePrint')

@@ -56,3 +56,8 @@ export class UpdateNotificationDto {
   @IsIn([0, 1])
   n_reminders?: number
 }
+
+export class ComplianceItemDto {
+  name: string
+  value: string // URL
+}

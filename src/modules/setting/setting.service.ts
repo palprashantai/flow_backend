@@ -1,7 +1,7 @@
 // ticket-category.service.ts
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { Repository } from 'typeorm'
-import { CreateAppEventLogDto, UpdateNotificationDto } from './setting.dto'
+import { ComplianceItemDto, CreateAppEventLogDto, UpdateNotificationDto } from './setting.dto'
 
 import { InjectRepository } from '@nestjs/typeorm'
 import { AppEventLog } from './setting.entity'
@@ -159,5 +159,18 @@ export class SettingService {
         message: 'Error retrieving data',
       }
     }
+  }
+
+  getComplianceItems(): ComplianceItemDto[] {
+    return [
+      { name: 'Privacy Policy', value: 'https://streetgains.in/privacy-policy' },
+      { name: 'Terms & Conditions', value: 'https://streetgains.in/terms-conditions' },
+      { name: 'Disclaimer', value: 'https://streetgains.in/disclaimer' },
+      { name: 'Grievance Redressal Process', value: 'https://streetgains.in/grievance' },
+      { name: 'Refund Policy', value: 'https://streetgains.in/refund-policy' },
+      { name: 'Client Acceptance', value: 'https://streetgains.in/client-acceptance' },
+      { name: 'User Agreement', value: 'https://streetgains.in/user-agreement' },
+      { name: 'About', value: 'https://streetgains.in/about' },
+    ]
   }
 }

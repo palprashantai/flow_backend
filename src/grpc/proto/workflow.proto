@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package workflow;
+
+// The service definition.
+service WorkflowService {
+  // Check workflows for subscriber events
+  rpc CheckSubscriberWorkflow (CheckSubscriberWorkflowRequest) returns (CheckWorkflowResponse);
+  
+  // Check workflows for lead creation events
+  rpc CheckLeadWorkflow (CheckLeadWorkflowRequest) returns (CheckWorkflowResponse);
+  
+  // Check workflows for order events
+  rpc CheckOrderWorkflow (CheckOrderWorkflowRequest) returns (CheckWorkflowResponse);
+  
+  // Check workflows for subscription events
+  rpc CheckSubscriptionWorkflow (CheckSubscriptionWorkflowRequest) returns (CheckWorkflowResponse);
+}
+
+// Enums for better type safety
+enum EventType {
+  INSERT = 0;
+  UPDATE = 1;
+}
+
+enum OperationType {
+  ADD = 0;
+  EDIT = 1;
+}
+
+// The request message for subscriber workflow checks
+message CheckSubscriberWorkflowRequest {
+  int32 subscriberId = 1;
+  EventType eventType = 2;
+}
+
+// The request message for lead creation workflow checks
+message CheckLeadWorkflowRequest {
+  int32 id = 1;
+}
+
+// The request message for order workflow checks
+message CheckOrderWorkflowRequest {
+  int32 id = 1;
+  OperationType operation = 2;
+}
+
+// The request message for subscription workflow checks
+message CheckSubscriptionWorkflowRequest {
+  int32 id = 1;
+  OperationType operation = 2;
+}
+
+// The response message containing a success status and message
+message CheckWorkflowResponse {
+  bool success = 1;
+  string message = 2;
+}
