@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm'
 import { logger } from 'middlewares/logger.middleware'
 import { getUserBy } from 'modules/auth/auth.repository'
 import {
+  ConnectTransactionDto,
   CreateTransactionDto,
   DeleteAuthResponseDto,
   GetAuthResponseDto,
@@ -15,7 +16,7 @@ import {
 import {
   deleteSubscriberAuthId,
   getSmallcaseOrderByTransaction,
-  // updateSmallcaseOrderBroker,
+  updateSmallcaseOrderBroker,
   updateSubscriberAuthId,
 } from './smallcase.reposistory'
 
@@ -43,19 +44,20 @@ export class SmallcaseService {
         throw new BadRequestException('Valid User ID is required')
       }
 
-      const subscriber = await getUserBy({ id: userId }, ['authid'])
+      const subscriber = await getUserBy({ id: userId }, ['authid', 'broker'])
       console.log(subscriber)
 
-      if (!subscriber.authid) {
-        throw new NotFoundException('No Auth ID found for this user')
+      if (!subscriber?.authid || !subscriber?.broker) {
+        throw new NotFoundException('No Auth ID or Broker found for this user')
       }
 
-      this.logger.info(`Auth ID retrieved for user: ${userId}`)
+      this.logger.info(`Auth ID and Broker retrieved for user: ${userId}`)
 
       return {
         success: true,
         authId: subscriber.authid,
-        message: 'Auth ID retrieved successfully',
+        broker: subscriber.broker,
+        message: 'Auth ID and Broker retrieved successfully',
       }
     } catch (error) {
       this.logger.error(`Error in getUserAuthId for user ${userId}:`, error)
@@ -64,7 +66,7 @@ export class SmallcaseService {
         throw error
       }
 
-      throw new InternalServerErrorException('Failed to retrieve Auth ID')
+      throw new InternalServerErrorException('Failed to retrieve Auth ID and Broker')
     }
   }
 
@@ -94,13 +96,13 @@ export class SmallcaseService {
   async createTransaction(dto: CreateTransactionDto, subscriberid?: number): Promise<{ success: boolean; data?: any; error?: string }> {
     const subscriberDetails = await getUserBy({ id: subscriberid })
 
-    const { intent = 'CONNECT' } = dto
+    const { intent = 'TRANSACTION', orderConfig } = dto
     const authToken = createAuthToken(subscriberDetails?.authid) // creates guest token if no authId
 
     try {
       const response = await axios.post(
         `https://gatewayapi.smallcase.com/gateway/${process.env.SMALLCASE_GATEWAY_NAME}/transaction`,
-        { intent },
+        { intent, orderConfig },
         {
           headers: {
             'x-gateway-secret': process.env.SMALLCASE_API_SECRET as string,
@@ -124,6 +126,49 @@ export class SmallcaseService {
             status: 0,
             broker: null,
             ordertype: orderType,
+            created_on: () => 'NOW()',
+          })
+          .execute()
+      }
+
+      return { success: true, data: response.data?.data }
+    } catch (error: any) {
+      console.warn('Transaction API failed:', error.response?.data || error.message)
+      return { success: false, error: error.response?.data || error.message }
+    }
+  }
+
+  async connect(dto: ConnectTransactionDto, subscriberid?: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    const subscriberDetails = await getUserBy({ id: subscriberid })
+
+    const { intent = 'CONNECT' } = dto
+    const authToken = createAuthToken(subscriberDetails?.authid) // creates guest token if no authId
+
+    try {
+      const response = await axios.post(
+        `https://gatewayapi.smallcase.com/gateway/${process.env.SMALLCASE_GATEWAY_NAME}/transaction`,
+        { intent },
+        {
+          headers: {
+            'x-gateway-secret': process.env.SMALLCASE_API_SECRET as string,
+            'x-gateway-authtoken': authToken,
+          },
+        }
+      )
+      const transactionId = response.data?.data?.transactionId // adjust to your API response structure
+
+      if (transactionId) {
+        await this.dataSource
+          .createQueryBuilder()
+          .insert()
+          .into('tbl_smallcase_order')
+          .values({
+            transactionid: transactionId,
+            // serviceid: serviceId,
+            subscriberid: subscriberDetails.id || null,
+            status: 0,
+            broker: null,
+            // ordertype: orderType,
             created_on: () => 'NOW()',
           })
           .execute()
@@ -166,9 +211,9 @@ export class SmallcaseService {
       // Execute updates in parallel
       await Promise.all([
         // Update subscriber with smallcaseAuthId
-        updateSubscriberAuthId(userId, smallcaseAuthId),
+        updateSubscriberAuthId(userId, smallcaseAuthId, dto.broker),
         // Update order with broker and mark as completed
-        // updateSmallcaseOrderBroker(dto.transactionId, dto.broker, userId),
+        updateSmallcaseOrderBroker(dto.transactionId, dto.broker, userId),
       ])
 
       this.logger.info(`Smallcase auth mapped successfully for user: ${userId}, authId: ${smallcaseAuthId}`)

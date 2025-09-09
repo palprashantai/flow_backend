@@ -1,7 +1,14 @@
 import { Body, Controller, Delete, Get, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
-import { CreateTransactionDto, DeleteAuthResponseDto, GetAuthResponseDto, MapSmallcaseAuthDto, MapSmallcaseAuthResponseDto } from './smallcase.dto'
+import {
+  ConnectTransactionDto,
+  CreateTransactionDto,
+  DeleteAuthResponseDto,
+  GetAuthResponseDto,
+  MapSmallcaseAuthDto,
+  MapSmallcaseAuthResponseDto,
+} from './smallcase.dto'
 import { SmallcaseService } from './smallcase.service'
 
 @ApiTags('Smallcase')
@@ -70,12 +77,23 @@ export class SmallcaseController {
   @Post('transaction')
   @Auth()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a Smallcase transaction (Razorpay)' })
+  @ApiOperation({ summary: 'Create a Smallcase transaction' })
   @ApiResponse({ status: 201, description: 'Transaction created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async createTransaction(@Body() dto: CreateTransactionDto, @GetUserId('id') userId: number) {
     return this.smallcaseService.createTransaction(dto, userId)
+  }
+
+  @Post('connect')
+  @Auth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Link Broker' })
+  @ApiResponse({ status: 201, description: 'Broker Linked successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async connect(@Body() dto: ConnectTransactionDto, @GetUserId('id') userId: number) {
+    return this.smallcaseService.connect(dto, userId)
   }
 
   @Post('map-auth')
@@ -144,7 +162,7 @@ export class SmallcaseController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async deleteAuthId(@GetUserId('id') userId: number): Promise<DeleteAuthResponseDto> {
-  console.log(`deleteAuthId called for user: ${userId}`)
+    console.log(`deleteAuthId called for user: ${userId}`)
     const result = await this.smallcaseService.deleteUserAuthId(userId)
     return result
   }

@@ -67,16 +67,44 @@ export class CreateTransactionDto {
   @IsNotEmpty()
   ordertype: number
 
+  @ApiProperty({ example: 'TRANSACTION' })
+  @IsString()
+  @IsNotEmpty()
+  intent: string
+
+  @ApiProperty({ type: OrderConfigDto })
+  @ValidateNested()
+  @Type(() => OrderConfigDto)
+  @IsNotEmpty()
+  orderConfig: OrderConfigDto
+}
+
+export class ConnectTransactionDto {
+  // @ApiProperty({ example: 1 })
+  // @IsNumber()
+  // @IsNotEmpty()
+  // serviceId: number
+
+  // @ApiProperty({
+  //   example: 0,
+  //   enum: [0, 1],
+  //   description: 'Order type: 0 = investnow, 1 = rebalance',
+  // })
+  // @IsIn([0, 1])
+  // @IsNumber()
+  // @IsNotEmpty()
+  // ordertype: number
+
   @ApiProperty({ example: 'CONNECT' })
   @IsString()
   @IsNotEmpty()
   intent: string
 
-  // @ApiProperty({ type: OrderConfigDto })
-  // @ValidateNested()
-  // @Type(() => OrderConfigDto)
-  // @IsNotEmpty()
-  // orderConfig: OrderConfigDto
+  //   @ApiProperty({ type: OrderConfigDto })
+  //   @ValidateNested()
+  //   @Type(() => OrderConfigDto)
+  //   @IsNotEmpty()
+  //   orderConfig: OrderConfigDto
 }
 
 export class MapSmallcaseAuthDto {
@@ -108,37 +136,39 @@ export class MapSmallcaseAuthDto {
 
 export class MapSmallcaseAuthResponseDto {
   @ApiProperty({ example: true })
-  success: boolean;
+  success: boolean
 
   @ApiProperty({ example: 'Smallcase account mapped successfully' })
-  message: string;
+  message: string
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: {
       smallcaseAuthId: '67b834897b7b6d05ad63f1d',
       transactionId: 'TRX_a2f301e3ab6b4e48a68cc0a52a6abab2',
-      broker: 'groww'
-    }
+      broker: 'groww',
+    },
   })
-  data?: any;
+  data?: any
 }
-
 
 export class GetAuthResponseDto {
   @ApiProperty({ example: true })
-  success: boolean;
+  success: boolean
 
   @ApiProperty({ example: '67b834897b7b6d05ad63f1d' })
-  authId: string;
+  authId: string
+
+    @ApiProperty({ example: 'Groww' })
+  broker: string
 
   @ApiProperty({ example: 'Auth ID retrieved successfully' })
-  message: string;
+  message: string
 }
 
 export class DeleteAuthResponseDto {
   @ApiProperty({ example: true })
-  success: boolean;
+  success: boolean
 
   @ApiProperty({ example: 'Auth ID deleted successfully' })
-  message: string;
+  message: string
 }

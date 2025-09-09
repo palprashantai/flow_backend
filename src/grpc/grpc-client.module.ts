@@ -13,7 +13,7 @@ import { GrpcClientService } from './grpc-client.service';
         options: {
           package: 'workflow',
           protoPath: join(__dirname, 'proto/workflow.proto'), // Correct path to proto file
-          url: 'localhost:50051', // This should match your CRM server's gRPC port
+          url: 'localhost:50059', // This should match your CRM server's gRPC port
           loader: {
             keepCase: true,
             longs: String,

@@ -11,24 +11,26 @@ import { ReferralModule } from 'modules/referral/referral.module'
 const releaseNotes = `
 ### 🆕 Smallcase Integration & Referral APIs — 2025-09-03
 
-✅ New Smallcase Auth Management:
-  - POST /smallcase/map-auth
-    — Map Smallcase Auth Token with User Account
-  - GET /smallcase/auth  
-    — Retrieve user's Smallcase Auth ID
-  - DELETE /smallcase/auth
-    — Remove/disconnect Smallcase Auth ID
+      ✅ New Smallcase Auth Management:
+        - POST /smallcase/map-auth
+          — Map Smallcase Auth Token with User Account
+        - GET /smallcase/auth  
+          — Retrieve user's Smallcase Auth ID
+        - DELETE /smallcase/auth
+          — Remove/disconnect Smallcase Auth ID
+        - POST /appApi/smallcase/connect
+          — Connect Smallcase account directly from app
 
-✅ New Referral System:
-  - GET /referral/home
-    — Get wallet balance, referral code, and FAQs
-    — Includes promotional card text and user referral code
+      ✅ New Referral System:
+        - GET /referral/home
+          — Get wallet balance, referral code, and FAQs
+          — Includes promotional card text and user referral code
 
-✅ Database Updates:
-  - Modified tbl_subscriber.authid to VARCHAR(50)
-    — Now supports Smallcase Auth ID strings
-  - Enhanced wallet balance calculation
-    — Handles positive/negative amounts summation
+      ✅ Database Updates:
+        - Modified tbl_subscriber.authid to VARCHAR(50)
+          — Now supports Smallcase Auth ID strings
+        - Enhanced wallet balance calculation
+          — Handles positive/negative amounts summation
 `
 
 export function setupSwagger(app: INestApplication) {

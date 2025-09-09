@@ -1,27 +1,30 @@
 import { dataSource } from 'databases/data-source'
 
-export async function updateSubscriberAuthId(subscriberid: number, authId: string) {
+export async function updateSubscriberAuthId(subscriberId: number, authId: string, broker: string) {
   const ds = await dataSource
   return await ds
     .createQueryBuilder()
     .update('tbl_subscriber')
-    .set({ authid: authId })
-    .where('id = :subscriberid', { subscriberid })
+    .set({
+      authid: authId,
+      broker: broker,
+    })
+    .where('id = :subscriberId', { subscriberId })
     .execute()
 }
 
-// export async function updateSmallcaseOrderBroker(transactionId: string, broker: string, subscriberid: number) {
-//   const ds = await dataSource
-//   return await ds
-//     .createQueryBuilder()
-//     .update('tbl_smallcase_order')
-//     .set({
-//       broker: broker,
-//     })
-//     .where('transactionid = :transactionId', { transactionId })
-//     .andWhere('subscriberid = :subscriberid', { subscriberid })
-//     .execute()
-// }
+export async function updateSmallcaseOrderBroker(transactionId: string, broker: string, subscriberid: number) {
+  const ds = await dataSource
+  return await ds
+    .createQueryBuilder()
+    .update('tbl_smallcase_order')
+    .set({
+      broker: broker,
+    })
+    .where('transactionid = :transactionId', { transactionId })
+    .andWhere('subscriberid = :subscriberid', { subscriberid })
+    .execute()
+}
 
 export async function getSmallcaseOrderByTransaction(transactionId: string, subscriberid: number) {
   const ds = await dataSource

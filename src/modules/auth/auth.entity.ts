@@ -32,6 +32,9 @@ export class Subscriber {
   @Column({ type: 'varchar', length: 50, nullable: true })
   bill_to: string
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  broker: string
+
   @Column({ type: 'varchar', length: 30, nullable: true })
   gstno: string
 

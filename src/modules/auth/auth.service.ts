@@ -11,6 +11,7 @@ import { OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreat
 import { RegisterDto, VerifyOtpDto } from './auth.dto'
 import { CommonService } from 'modules/common/common.service'
 import { logger } from 'middlewares/logger.middleware'
+import { GrpcClientService } from 'grpc/grpc-client.service'
 
 @Injectable()
 export class AuthService {
@@ -30,7 +31,8 @@ export class AuthService {
     @InjectRepository(WorkflowLeadCreation)
     private readonly workflowLeadCreationRepository: Repository<WorkflowLeadCreation>,
     @InjectRepository(UserInfo)
-    private readonly userInfoRepository: Repository<UserInfo>
+    private readonly userInfoRepository: Repository<UserInfo>,
+    private readonly grpcClient: GrpcClientService
   ) {}
 
   /** Generates a token for authentication.
@@ -221,6 +223,9 @@ export class AuthService {
           type: 0,
         })
         .execute()
+
+      await this.grpcClient.checkLeadWorkflow(finalSubscriber.id) // Using the same ID for testing
+      await this.grpcClient.checkSubscriberWorkflow(finalSubscriber.id, 'insert')
 
       this.logger.info(`New subscriber created: ${subscriberid}`)
     } else {
