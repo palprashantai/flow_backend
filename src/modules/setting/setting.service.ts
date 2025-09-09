@@ -20,10 +20,16 @@ export class SettingService {
 
   async getSubscriberNotificationSettings(userId: number) {
     try {
-      const user = await getUserBy(
-        { id: userId },
-        ['n_trade', 'n_rebalance', 'n_streetview', 'n_reminders'] // optional selected fields
-      )
+      const user = await getUserBy({ id: userId }, [
+        'subscription_alerts',
+        'rebalance_alerts',
+        'investment_push',
+        'offers_discounts_push',
+        'market_updates',
+        'renewal_reminders',
+        'whatsapp_notifications',
+      ])
+
       if (!user) {
         throw new NotFoundException(`Subscriber with ID ${userId} not found`)
       }
@@ -31,7 +37,15 @@ export class SettingService {
       return {
         success: true,
         message: 'Successful',
-        result: user,
+        result: {
+          subscription_alerts: user.subscription_alerts,
+          rebalance_alerts: user.rebalance_alerts,
+          investment_push: user.investment_push,
+          offers_discounts_push: user.offers_discounts_push,
+          market_updates: user.market_updates,
+          renewal_reminders: user.renewal_reminders,
+          whatsapp_notifications: user.whatsapp_notifications,
+        },
       }
     } catch (error) {
       this.logger.error('Error fetching notification settings:', error)
@@ -42,32 +56,44 @@ export class SettingService {
 
   async updateNotifications(dto: UpdateNotificationDto, userId: number): Promise<{ n_type: number; status: number }[]> {
     try {
-      // 1. Load current values (raw query since no entity is used)
-      const current = await getUserBy(
-        { id: userId },
-        ['n_trade', 'n_rebalance', 'n_streetview', 'n_reminders'] // optional selected fields
-      )
+      // 1. Load current values
+      const current = await getUserBy({ id: userId }, [
+        'subscription_alerts',
+        'rebalance_alerts',
+        'investment_push',
+        'offers_discounts_push',
+        'market_updates',
+        'renewal_reminders',
+        'whatsapp_notifications',
+      ])
+
       if (!current) {
         throw new NotFoundException(`Subscriber with ID ${userId} not found`)
       }
 
       // 2. Prepare update fields
       const updateFields = {
-        n_trade: dto.n_trade !== undefined ? dto.n_trade : current.n_trade,
-        n_rebalance: dto.n_rebalance !== undefined ? dto.n_rebalance : current.n_rebalance,
-        n_streetview: dto.n_streetview !== undefined ? dto.n_streetview : current.n_streetview,
-        n_reminders: dto.n_reminders !== undefined ? dto.n_reminders : current.n_reminders,
+        subscription_alerts: dto.subscription_alerts ?? current.subscription_alerts,
+        rebalance_alerts: dto.rebalance_alerts ?? current.rebalance_alerts,
+        investment_push: dto.investment_push ?? current.investment_push,
+        offers_discounts_push: dto.offers_discounts_push ?? current.offers_discounts_push,
+        market_updates: dto.market_updates ?? current.market_updates,
+        renewal_reminders: dto.renewal_reminders ?? current.renewal_reminders,
+        whatsapp_notifications: dto.whatsapp_notifications ?? current.whatsapp_notifications,
       }
 
       // 3. Update row
       await updateNotifications(updateFields, userId)
 
-      // 4. Always return all four statuses
+      // 4. Always return all statuses
       return [
-        { n_type: 1, status: updateFields.n_trade },
-        { n_type: 2, status: updateFields.n_rebalance },
-        { n_type: 3, status: updateFields.n_streetview },
-        { n_type: 4, status: updateFields.n_reminders },
+        { n_type: 1, status: updateFields.subscription_alerts },
+        { n_type: 2, status: updateFields.rebalance_alerts },
+        { n_type: 3, status: updateFields.investment_push },
+        { n_type: 4, status: updateFields.offers_discounts_push },
+        { n_type: 5, status: updateFields.market_updates },
+        { n_type: 6, status: updateFields.renewal_reminders },
+        { n_type: 7, status: updateFields.whatsapp_notifications },
       ]
     } catch (error) {
       console.error('Error updating notifications:', error)

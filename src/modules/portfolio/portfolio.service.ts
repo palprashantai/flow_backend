@@ -190,20 +190,33 @@ export class PortfolioService {
         })
       }
 
-      const relatedServices = otherServices.map((row) => ({
-        id: row.id,
-        service_name: row.service_name,
-        service_slug: row.service_slug,
-        image: row.service_image,
-        description: row.service_description,
-        is_free: row.is_free,
-        last_updated: row.last_rebalance_date,
-        subscription_count: row.subscription_count,
-        volatility: row.volatility,
-        cagr: row.cagr,
-        min_investment: row.min_investment,
-        limited_slot: 1,
-      }))
+      const relatedServices = await Promise.all(
+        otherServices.map(async (row) => {
+          // 🔹 Check subscriber subscription status
+          const subscriptionStatus = await this.portfolioDetailReposistory.getActiveSubscription(subscriberid, row.id)
+
+          return {
+            id: row.id,
+            name: row.service_name,
+            volatility: row.volatility || '',
+            serviceSlug: row.service_slug,
+            serviceImage: row.service_image ? `${process.env.WEB_URL || 'https://webapp.streetgains.in/'}uploads/${row.service_image}` : '',
+            description: row.service_description || '',
+            riskTag: row.risk_tag || '', // requires `risk_tag` field in DB, else empty
+            return: {
+              period: '1Y CAGR',
+              value: row.cagr ? Number(row.cagr) : 0,
+            },
+            minInvestment: row.min_investment ? Number(row.min_investment) : 0,
+            peopleInvestedLast30Days: row.subscription_count ? Number(row.subscription_count) : 0,
+            lastUpdated: row.last_rebalance_date,
+            getAccessPrice: row.access_price,
+            isFree: Boolean(row.is_free),
+            subscriptionActive: subscriptionStatus.is_subscribed && !subscriptionStatus.is_expired,
+            subscriptionExpired: subscriptionStatus.is_subscribed && subscriptionStatus.is_expired,
+          }
+        })
+      )
 
       const launchDateEntry = {
         datetime: serviceDetails.launch_date, // or whatever field holds the launch date

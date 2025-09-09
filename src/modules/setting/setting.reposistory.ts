@@ -124,7 +124,7 @@ export async function updateNotifications(updateFields: any, userId: number) {
     .createQueryBuilder()
     .update('tbl_subscriber')
     .set(updateFields)
-    .where('subscriberid = :subscriberid', { subscriberid: userId })
+    .where('id = :id', { id: userId })
     .execute()
 }
 

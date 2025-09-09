@@ -35,27 +35,44 @@ export class CreateAppEventLogDto {
   @IsString()
   payload?: string
 }
+
 export class UpdateNotificationDto {
-  @ApiProperty({ description: 'Trade notifications: 0 = off, 1 = on', required: false })
+  @ApiProperty({ description: 'Subscription Alerts: 0 = off, 1 = on', required: false })
   @IsOptional()
   @IsIn([0, 1])
-  n_trade?: number
+  subscription_alerts?: number
 
-  @ApiProperty({ description: 'Rebalance notifications: 0 = off, 1 = on', required: false })
+  @ApiProperty({ description: 'Rebalance Alerts: 0 = off, 1 = on', required: false })
   @IsOptional()
   @IsIn([0, 1])
-  n_rebalance?: number
+  rebalance_alerts?: number
 
-  @ApiProperty({ description: 'Streetview notifications: 0 = off, 1 = on', required: false })
+  @ApiProperty({ description: 'Investment Push: 0 = off, 1 = on', required: false })
   @IsOptional()
   @IsIn([0, 1])
-  n_streetview?: number
+  investment_push?: number
 
-  @ApiProperty({ description: 'Reminders notifications: 0 = off, 1 = on', required: false })
+  @ApiProperty({ description: 'Offers & Discounts Push: 0 = off, 1 = on', required: false })
   @IsOptional()
   @IsIn([0, 1])
-  n_reminders?: number
+  offers_discounts_push?: number
+
+  @ApiProperty({ description: 'Market Updates: 0 = off, 1 = on', required: false })
+  @IsOptional()
+  @IsIn([0, 1])
+  market_updates?: number
+
+  @ApiProperty({ description: 'Renewal Reminders: 0 = off, 1 = on', required: false })
+  @IsOptional()
+  @IsIn([0, 1])
+  renewal_reminders?: number
+
+  @ApiProperty({ description: 'WhatsApp Notifications: 0 = off, 1 = on', required: false })
+  @IsOptional()
+  @IsIn([0, 1])
+  whatsapp_notifications?: number
 }
+
 
 export class ComplianceItemDto {
   name: string

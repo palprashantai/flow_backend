@@ -28,10 +28,13 @@ export class SettingController {
     summary: 'Update subscriber notification preferences',
     description: `
   n_type mapping:
-  1 → Trade
-  2 → Rebalance
-  3 → Streetview
-  4 → Reminders
+  1 → Subscription Alerts
+  2 → Rebalance Alerts
+  3 → Investment Push
+  4 → Offers & Discounts
+  5 → Market Updates
+  6 → Renewal Reminders
+  7 → WhatsApp Notifications
   `,
   })
   @ApiBody({ type: UpdateNotificationDto })

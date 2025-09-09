@@ -262,6 +262,27 @@ export class Subscriber {
 
   @Column({ type: 'datetime', nullable: true })
   user_acceptance: Date
+
+  @Column({ type: 'tinyint', default: 1 })
+  subscription_alerts: number
+
+  @Column({ type: 'tinyint', default: 1 })
+  rebalance_alerts: number
+
+  @Column({ type: 'tinyint', default: 1 })
+  investment_push: number
+
+  @Column({ type: 'tinyint', default: 1 })
+  offers_discounts_push: number
+
+  @Column({ type: 'tinyint', default: 1 })
+  market_updates: number
+
+  @Column({ type: 'tinyint', default: 1 })
+  renewal_reminders: number
+
+  @Column({ type: 'tinyint', default: 1 })
+  whatsapp_notifications: number
 }
 
 @Entity('tbl_log3')

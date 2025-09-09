@@ -4,13 +4,13 @@ import { AuthController } from './auth.controller'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { LogEntity, OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreation } from './auth.entity'
 import { CommonModule } from 'modules/common/common.module'
-import { GrpcClientModule } from 'grpc/grpc-client.module'
+// import { GrpcClientModule } from 'grpc/grpc-client.module'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Subscriber, OtpBoxEntity, LogEntity, SubscriberRecent, WorkflowLeadCreation, UserInfo]),
     CommonModule,
-    GrpcClientModule,
+    // GrpcClientModule,
   ],
   controllers: [AuthController],
   exports: [AuthService], // 👈 EXPORT IT
