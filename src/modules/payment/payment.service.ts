@@ -354,6 +354,8 @@ export class PaymentService {
       if (!planData) throw new BadRequestException('Plan not found')
 
       const amount = Number(planData.credits_price)
+
+      console.log(userId, amount, transactionId)
       if (!userId || !amount || !transactionId) {
         throw new BadRequestException('Required parameters are missing')
       }

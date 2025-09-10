@@ -139,11 +139,13 @@ export class PaymentController {
   }
 
   @Post('payment-success-portfolio')
+  @Auth()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Handle payment success for portfolio purchase' })
   @ApiResponse({ status: 200, description: 'Payment processed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or missing token' })
   async paymentSuccessPortfolio(@Body() dto: CreatePortfolioOrderDto, @GetUserId('id') userId: number) {
+    console.log(userId)
     return this.paymentService.paymentSuccessPortfolio(dto, userId)
   }
 }
