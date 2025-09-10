@@ -139,6 +139,7 @@ export class PaymentController {
   }
 
   @Post('payment-success-portfolio')
+  @Auth()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Handle payment success for portfolio purchase' })
   @ApiResponse({ status: 200, description: 'Payment processed successfully' })
