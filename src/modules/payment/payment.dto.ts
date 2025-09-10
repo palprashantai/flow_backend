@@ -51,7 +51,6 @@ export class OrderConfigDto {
   meta?: OrderMetaDto
 }
 
-
 //
 // ========== Subscription DTO
 //
@@ -132,9 +131,6 @@ export class CreatePortfolioOrderDto {
   @IsNumber()
   serviceSubId: number
 
-  @IsNumber()
-  taxAmount: number
-
   @IsOptional()
   @IsString()
   couponcode?: string
@@ -142,5 +138,3 @@ export class CreatePortfolioOrderDto {
   @IsOptional()
   use_balance?: boolean
 }
-
-

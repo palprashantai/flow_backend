@@ -399,7 +399,7 @@ export class PaymentService {
       // Generate invoice
       const invoiceArr = await this.getOrderInvoice(amount)
       const orderId = invoiceArr.invoiceno
-      const taxAmount = 0
+      // const taxAmount = 0
       // Insert order
       // Check if order exists for this transactionId
       const existingOrder = await this.dataSource
@@ -421,7 +421,7 @@ export class PaymentService {
             subscriberid: userId,
             research_fee: amount,
             discount_amt: 0,
-            tax_amt: taxAmount || 0,
+            tax_amt: 0,
             amount_payable: amount,
             actual_amount: amount,
             offerid: offerId,
@@ -449,7 +449,7 @@ export class PaymentService {
             subscriberid: userId,
             research_fee: amount,
             discount_amt: 0,
-            tax_amt: taxAmount || 0,
+            tax_amt: 0,
             amount_payable: amount,
             actual_amount: amount,
             offerid: offerId,
