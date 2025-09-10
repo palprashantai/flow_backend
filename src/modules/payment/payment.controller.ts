@@ -139,8 +139,8 @@ export class PaymentController {
   }
 
   @Post('payment-success-portfolio')
-  @Auth()
   @ApiBearerAuth()
+  @Auth()
   @ApiOperation({ summary: 'Handle payment success for portfolio purchase' })
   @ApiResponse({ status: 200, description: 'Payment processed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or missing token' })

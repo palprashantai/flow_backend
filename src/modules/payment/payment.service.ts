@@ -467,7 +467,7 @@ export class PaymentService {
           })
           .execute()
 
-        orderInsertedId = orderResult.identifiers[0].id
+        orderInsertedId = orderResult.raw.insertId
       }
 
       // Now handle tbl_order_sub (insert if not exists)
@@ -545,7 +545,7 @@ export class PaymentService {
         })
         .execute()
 
-      const subscriptionRecordId = subscriptionResult.identifiers[0].id
+      const subscriptionRecordId = subscriptionResult.raw.insertId
 
       // await this.commonService.checkWorkflowSubscriptionWorkflow(subscriptionRecordId, 'Add')
 
