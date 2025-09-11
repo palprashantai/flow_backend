@@ -162,14 +162,6 @@ export async function getAllInsight(): Promise<any[]> {
   }
 }
 
-/**
- * Fetches portfolios based on various filters.
- *
- * @param {FilterPortfolioDto} filterDto - DTO containing filter criteria.
- * @param {number} [userId] - Optional user ID for personalized data.
- * @returns {Promise<any[]>} A list of filtered portfolios.
- * @throws {InternalServerErrorException} If the query fails.
- */
 export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userId?: number) {
   try {
     const ds = await dataSource
@@ -206,31 +198,34 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
       's.is_free AS isFree',
     ]
 
-    // ✅ Declare query FIRST
     let query = ds
       .createQueryBuilder()
       .select(baseSelect)
       .from('tbl_services', 's')
       .where('s.isdelete = 0 AND s.service_type = 1 AND s.activate = 1')
 
-    // ✅ Add JOIN and subscription fields conditionally
-    if (userId && userType && userType !== 'first_time') {
-      query.leftJoin('tbl_subscription', 'us', 'us.serviceid = s.id AND us.subscriberid = :userId', { userId })
-
-      baseSelect.push(
-        `CASE WHEN us.id IS NOT NULL AND us.expiry_date > NOW() THEN 1 ELSE 0 END AS subscriptionActive`,
-        `CASE WHEN us.id IS NOT NULL AND us.expiry_date <= NOW() THEN 1 ELSE 0 END AS subscriptionExpired`
-      )
-    }
-
     // === UserType filters
     if (userId && userType) {
       switch (userType) {
         case 'subscriber':
-          query.andWhere('us.expiry_date > NOW()')
+          query.andWhere(
+            `EXISTS (SELECT 1 FROM tbl_subscription sub 
+                     WHERE sub.serviceid = s.id 
+                       AND sub.subscriberid = :userId 
+                       AND sub.status = 'Active' 
+                       AND sub.isdelete = 0)`
+          )
+          query.setParameter('userId', userId)
           break
         case 'expired':
-          query.andWhere('us.expiry_date <= NOW() AND us.id IS NOT NULL')
+          query.andWhere(
+            `EXISTS (SELECT 1 FROM tbl_subscription sub 
+                     WHERE sub.serviceid = s.id 
+                       AND sub.subscriberid = :userId 
+                       AND sub.status = 'Expired' 
+                       AND sub.isdelete = 0)`
+          )
+          query.setParameter('userId', userId)
           break
         case 'first_time':
           query.orderBy('s.subscription_count', 'DESC').limit(5)
@@ -264,11 +259,8 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
 
     // === Investment Strategy
     if (investmentStrategy?.length) {
-      // Convert investmentStrategy to numbers if they're strings
       const strategyIds = investmentStrategy.map((id) => Number(id))
-      // Join with the segment table using the correct relationship
       query.innerJoin('tbl_segment', 'seg', 'seg.id = s.segid')
-      // Filter by segment IDs
       query.andWhere('seg.id IN (:...strategyIds)', { strategyIds })
     }
 
@@ -305,11 +297,8 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
     }
     if (volatility?.length) countQuery.andWhere('s.volatility IN (:...volatility)', { volatility })
     if (investmentStrategy?.length) {
-      // Convert investmentStrategy to numbers if they're strings
       const strategyIds = investmentStrategy.map((id) => Number(id))
-      // Join with the segment table using the correct relationship
       countQuery.innerJoin('tbl_segment', 'seg', 'seg.id = s.segid')
-      // Filter by segment IDs
       countQuery.andWhere('seg.id IN (:...strategyIds)', { strategyIds })
     }
     if (returns?.length) countQuery.andWhere('s.investment_period IN (:...returns)', { returns })
@@ -323,27 +312,58 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
     const totalResult = await countQuery.getRawOne()
     const total = parseInt(totalResult?.total || 0, 10)
 
-    // === Transform
-    const portfolios = rows.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      volatility: item.volatility,
-      serviceSlug: item.serviceSlug,
-      serviceImage: item.serviceImage,
-      description: item.description,
-      service_description: item.service_description,
-      access_price_monthly: item.access_price_monthly,
-      service_banner: item.service_banner,
-      riskTag: item.riskTag,
-      return: { period: '1Y CAGR', value: parseFloat(item.returnValue || 0) },
-      minInvestment: parseInt(item.minInvestment || 0),
-      peopleInvestedLast30Days: parseInt(item.peopleInvestedLast30Days || 0),
-      lastUpdated: new Date(item.lastUpdated),
-      getAccessPrice: item.getAccessPrice ? parseFloat(item.getAccessPrice) : undefined,
-      isFree: item.isFree === 1,
-      subscriptionActive: item.subscriptionActive === 1,
-      subscriptionExpired: item.subscriptionExpired === 1,
-    }))
+    // === Fetch subscriptions in one go (avoid N+1 problem)
+    let userSubscriptions: Record<number, { status: string }> = {}
+    if (userId) {
+      const subs = await ds.query(
+        `
+        SELECT serviceid, status 
+        FROM tbl_subscription 
+        WHERE subscriberid = ? 
+          AND isdelete = 0
+        ORDER BY id DESC
+        `,
+        [userId]
+      )
+      for (const sub of subs) {
+        if (!userSubscriptions[sub.serviceid]) {
+          userSubscriptions[sub.serviceid] = { status: sub.status }
+        }
+      }
+    }
+
+    // === Transform rows
+    const portfolios = rows.map((item) => {
+      let subscriptionActive = false
+      let subscriptionExpired = false
+
+      if (userId && userSubscriptions[item.id]) {
+        const { status } = userSubscriptions[item.id]
+        subscriptionActive = status === 'Active'
+        subscriptionExpired = status === 'Expired'
+      }
+
+      return {
+        id: item.id,
+        name: item.name,
+        volatility: item.volatility,
+        serviceSlug: item.serviceSlug,
+        serviceImage: item.serviceImage,
+        description: item.description,
+        service_description: item.service_description,
+        access_price_monthly: item.access_price_monthly,
+        service_banner: item.service_banner,
+        riskTag: item.riskTag,
+        return: { period: '1Y CAGR', value: parseFloat(item.returnValue || 0) },
+        minInvestment: parseInt(item.minInvestment || 0),
+        peopleInvestedLast30Days: parseInt(item.peopleInvestedLast30Days || 0),
+        lastUpdated: new Date(item.lastUpdated),
+        getAccessPrice: item.getAccessPrice ? parseFloat(item.getAccessPrice) : undefined,
+        isFree: item.isFree === 1,
+        subscriptionActive,
+        subscriptionExpired,
+      }
+    })
 
     return {
       portfolios,
