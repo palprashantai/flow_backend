@@ -541,6 +541,7 @@ export class PaymentService {
           pay_refno: transactionId,
           ordersub_refno: orderInsertedId,
           expiry_date: expiry_date,
+          activation_date: today,
           razorpay_subscriptionid: razorpaySubscriptionId,
           created_by: userId,
           created_on: today,

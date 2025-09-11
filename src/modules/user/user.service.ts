@@ -226,18 +226,18 @@ export class UserService {
       if (!orders?.length) throw new Error('No orders found for this subscriber')
 
       // Map to response
-      const order = orders.map((order: any) => ({
-        orderSummary: `${order.s_service_name || ''} - ${order.os_trade || ''}`,
-        researchFee: order.o_research_fee || 0,
-        taxAmount: order.o_tax_amt || 0,
-        discountAmount: order.os_discount_amt || 0,
-        totalPaid: order.o_actual_amount || 0,
-        orderDate: order.o_payment_date || null,
-        transactionId: order.o_transactionid || null,
-        orderStatus: order.o_order_approval === 1 ? 'Approved' : 'Pending',
+      const mappedOrders = orders.map((order: any) => ({
+        orderSummary: `${order.service_name || ''} - ${order.trade || ''}`,
+        researchFee: parseFloat(order.research_fee) || 0,
+        taxAmount: parseFloat(order.tax_amt) || 0,
+        discountAmount: parseFloat(order.discount_amt) || 0,
+        totalPaid: parseFloat(order.actual_amount) || 0,
+        orderDate: order.payment_date || null,
+        transactionId: order.transactionid || null,
+        orderStatus: order.order_approval === 1 ? 'Approved' : 'Pending',
       }))
 
-      if (!order.length) throw new Error('No orders found for this subscriber')
+      return mappedOrders
     } catch (error) {
       this.logger.error('Error in OrdersService.getOrderListing:', error.message || error)
       throw error
@@ -248,6 +248,7 @@ export class UserService {
     try {
       const pageNum = Number(page) || 1
       const limitNum = Number(limit) || 10
+      const skip = (pageNum - 1) * limitNum
 
       const cacheKey = `my_subscriptions_${userId}_page${pageNum}_limit${limitNum}`
       const ttl = Number(process.env.CACHE_TTL_SECONDS) || 300
@@ -256,27 +257,21 @@ export class UserService {
       if (cached) return cached
 
       const subscriber = await getSubscriberDetails(userId)
-
       if (!subscriber) throw new NotFoundException('User not found')
-
-      const skip = (pageNum - 1) * limitNum
 
       const { totalCount, subscriptions } = await getSubscriberSubscriptions(userId, skip, limitNum)
 
       const subscriptionDetails = await Promise.all(
         subscriptions.map(async (sub) => {
-          // const perf = await getSubscriberNotificationsStats(sub.serviceid, sub.activation_date)
-          let stocksCountPromise: Promise<{ rtot: number }> = Promise.resolve({ rtot: 0 })
-
+          let totalStocks = 0
           if (sub.plantype === 1) {
-            stocksCountPromise = getPortfolioCount(sub.serviceid)
+            const stocksCount = await getPortfolioCount(sub.serviceid)
+            totalStocks = stocksCount?.rtot || 0
           }
 
-          const stocksCount = await stocksCountPromise
-
           const statusColor = sub.status === 'Active' ? '#16B24B' : '#FF4444'
-
-          const daysLeft = sub.expiry_date ? Math.ceil((new Date(sub.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
+          const daysLeft =
+            sub.expiry_date !== null ? Math.ceil((new Date(sub.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
 
           return {
             id: sub.id,
@@ -295,14 +290,14 @@ export class UserService {
             total_investment: 0,
             current_returns: 0,
             total_returns: 0,
-            total_stocks: stocksCount?.rtot || 0, // Consider replacing with actual count if needed
+            total_stocks: totalStocks,
             last_rebalance: sub.last_rebalance_date,
             next_rebalance: sub.next_rebalance_date,
             is_renew: daysLeft !== null && daysLeft <= 5,
             rebalance_frequency: sub.rebalance_frequency,
             activation_date: sub.activation_date,
-            isActiveSubscription: !!sub.hasActiveSubscription,
-            isExpiredSubscription: !!sub.hasExpiredSubscription,
+            isActiveSubscription: Number(sub.hasActiveSubscription) === 1,
+            isExpiredSubscription: Number(sub.hasExpiredSubscription) === 1,
           }
         })
       )
@@ -324,8 +319,8 @@ export class UserService {
           pagination: {
             currentPage: pageNum,
             limit: limitNum,
-            totalRecords: parseInt(totalCount),
-            totalPages: Math.ceil(parseInt(totalCount) / limitNum),
+            totalRecords: totalCount,
+            totalPages: Math.ceil(totalCount / limitNum),
           },
         },
       }

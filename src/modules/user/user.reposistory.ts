@@ -72,20 +72,22 @@ export async function getSubscriberDetails(subscriberid: number) {
     .getRawOne()
 }
 
-export async function getSubscriberSubscriptions(subscriberid: number, skip = 0, limitNum = 10) {
+export async function getSubscriberSubscriptions(subscriberId: number, skip = 0, limitNum = 10) {
   const ds = await dataSource
 
-  const [totalCountResult, subscriptions] = await Promise.all([
-    ds
-      .createQueryBuilder()
-      .select('COUNT(sub.id)', 'count')
-      .from('tbl_subscription', 'sub')
-      .innerJoin('tbl_services', 'sv', 'sub.serviceid = sv.id')
-      .where('sub.isdelete = 0 AND sub.subscriberid = :sid AND sv.service_type = 1', { sid: subscriberid })
-      .getRawOne(),
+  const baseQuery = ds
+    .createQueryBuilder()
+    .from('tbl_subscription', 'sub')
+    .innerJoin('tbl_services', 'sv', 'sub.serviceid = sv.id')
+    .where('sub.isdelete = 0 AND sub.subscriberid = :sid AND sv.service_type = 1', {
+      sid: subscriberId,
+    })
 
-    ds
-      .createQueryBuilder()
+  const [totalCountResult, subscriptions] = await Promise.all([
+    baseQuery.clone().select('COUNT(sub.id)', 'count').getRawOne(),
+
+    baseQuery
+      .clone()
       .select([
         'sub.id AS id',
         'sub.status AS status',
@@ -95,8 +97,8 @@ export async function getSubscriberSubscriptions(subscriberid: number, skip = 0,
         'sub.trades_total AS trades_total',
         'sub.trades_used AS trades_used',
         'sub.activation_date AS activation_date',
-        'sub.activation_time AS activation_time',
         'CAST(sub.expiry_date AS CHAR) AS expiry_date',
+        'sub.activation_time AS activation_time',
         'sub.expiry_time AS expiry_time',
         'sv.service_name AS service_name',
         'sv.service_image AS service_image',
@@ -104,20 +106,18 @@ export async function getSubscriberSubscriptions(subscriberid: number, skip = 0,
         'sv.last_rebalance_date AS last_rebalance_date',
         'sv.next_rebalance_date AS next_rebalance_date',
         'sv.rebalance_frequency AS rebalance_frequency',
-        `CASE WHEN sub.expiry_date > NOW() THEN TRUE ELSE FALSE END AS hasActiveSubscription`,
-        `CASE WHEN sub.expiry_date <= NOW() THEN TRUE ELSE FALSE END AS hasExpiredSubscription`,
         'sv.id AS serviceid',
+        // ✅ Only rely on status for flags
+        `CASE WHEN sub.status = 'Active' THEN TRUE ELSE FALSE END AS hasActiveSubscription`,
+        `CASE WHEN sub.status = 'Expired' THEN TRUE ELSE FALSE END AS hasExpiredSubscription`,
       ])
-      .from('tbl_subscription', 'sub')
-      .innerJoin('tbl_services', 'sv', 'sub.serviceid = sv.id')
-      .where('sub.isdelete = 0 AND sub.subscriberid = :sid AND sv.service_type = 1', { sid: subscriberid })
       .orderBy('sub.id', 'DESC')
       .offset(skip)
       .limit(limitNum)
       .getRawMany(),
   ])
 
-  const totalCount = totalCountResult?.count ?? 0
+  const totalCount = parseInt(totalCountResult?.count || '0', 10)
   return { totalCount, subscriptions }
 }
 

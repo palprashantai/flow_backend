@@ -59,7 +59,6 @@ export function getCurrentDateTime() {
 }
 
 export function checkExpiryDate(date: any): string {
-  console.log('checkExpiryDate:', date)
   if (
     date === '0000-00-00' ||
     date === '' ||
