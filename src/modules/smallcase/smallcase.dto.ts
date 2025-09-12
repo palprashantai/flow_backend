@@ -165,6 +165,9 @@ export class GetAuthResponseDto {
   broker: string
 
   @ApiProperty({ example: 'Groww' })
+  brokerName: string
+
+  @ApiProperty({ example: 'Groww' })
   brokerIcon: string
 
   @ApiProperty({ example: 'Auth ID retrieved successfully' })

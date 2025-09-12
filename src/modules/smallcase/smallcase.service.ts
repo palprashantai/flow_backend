@@ -44,17 +44,17 @@ export class SmallcaseService {
         throw new BadRequestException('Valid User ID is required')
       }
 
-      // 🔹 Fetch authid, broker, and icon_url by joining tbl_broker
+      // 🔹 Fetch authid, broker (slug), brokerName, and icon_url
       const subscriber = await this.dataSource
         .createQueryBuilder()
         .select('s.authid', 'authid')
-        .addSelect('s.broker', 'broker')
-        .addSelect('b.icon_url', 'brokerIcon')
+        .addSelect('s.broker', 'broker') // slug stored in tbl_subscriber
+        .addSelect('b.name', 'brokerName') // full broker name from tbl_broker
+        .addSelect('b.icon_url', 'brokerIcon') // logo
         .from('tbl_subscriber', 's')
-        .leftJoin('tbl_broker', 'b', 's.broker LIKE CONCAT("%", b.name, "%")')
+        .leftJoin('tbl_broker', 'b', 's.broker = b.slug')
         .where('s.id = :id', { id: userId })
         .getRawOne()
-
 
       if (!subscriber?.authid || !subscriber?.broker) {
         throw new NotFoundException('No Auth ID or Broker found for this user')
@@ -66,7 +66,8 @@ export class SmallcaseService {
         statusCode: 200,
         success: true,
         authId: subscriber.authid,
-        broker: subscriber.broker,
+        broker: subscriber.broker, // slug (e.g., groww, kite)
+        brokerName: subscriber.brokerName, // full name (e.g., Groww, Zerodha)
         brokerIcon: subscriber.brokerIcon,
         message: 'Auth ID and Broker retrieved successfully',
       }

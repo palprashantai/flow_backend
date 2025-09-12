@@ -97,6 +97,10 @@ ADD COLUMN broker VARCHAR(255) NULL AFTER email;
 
 CREATE TABLE streetgains.tbl_broker ( id INT UNSIGNED NOT NULL AUTO_INCREMENT, name VARCHAR(255) NOT NULL, icon_url VARCHAR(500) DEFAULT NULL, created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+ALTER TABLE streetgains.tbl_broker
+ADD COLUMN slug VARCHAR(100) NULL AFTER name;
+
 INSERT INTO streetgains.tbl_broker (name, icon_url) 
 VALUES
 ('Groww', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/fda16cce4a9e43fbbca296f860b5d199.jpg'),
@@ -107,3 +111,13 @@ VALUES
 ('Upstox', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/logos/a98be00544cd42dea492dfaf0ecc14c5.jpg'),
 ('5paisa', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/439f87d1c32e4a4a98b8d32c281677bb.jpg'),
 ('Kotak Securities', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/e1997dc85127420da395a8f01d0d6861.jpg');
+
+
+UPDATE streetgains.tbl_broker SET slug = 'groww' WHERE name = 'Groww';
+UPDATE streetgains.tbl_broker SET slug = 'kite' WHERE name = 'Zerodha';
+UPDATE streetgains.tbl_broker SET slug = 'angelbroking' WHERE name = 'Angel One';
+UPDATE streetgains.tbl_broker SET slug = 'hdfc' WHERE name = 'HDFC Securities';
+UPDATE streetgains.tbl_broker SET slug = 'axis' WHERE name LIKE 'Axis%';
+UPDATE streetgains.tbl_broker SET slug = 'upstox' WHERE name = 'Upstox';
+UPDATE streetgains.tbl_broker SET slug = 'fivepaisa' WHERE name LIKE '5Paisa%';
+UPDATE streetgains.tbl_broker SET slug = 'kotak' WHERE name LIKE 'Kotak%';
