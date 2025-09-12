@@ -94,3 +94,16 @@ ADD COLUMN service_banner VARCHAR(255) DEFAULT NULL AFTER access_price_monthly;
 
 ALTER TABLE streetgains.tbl_subscriber
 ADD COLUMN broker VARCHAR(255) NULL AFTER email;
+
+CREATE TABLE streetgains.tbl_broker ( id INT UNSIGNED NOT NULL AUTO_INCREMENT, name VARCHAR(255) NOT NULL, icon_url VARCHAR(500) DEFAULT NULL, created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO streetgains.tbl_broker (name, icon_url) 
+VALUES
+('Groww', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/fda16cce4a9e43fbbca296f860b5d199.jpg'),
+('Zerodha', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/06e5b0495f954efb99a33ceda18aec79.jpg'),
+('Angel One', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/logos/93924e21b8cb4b4cb8807a05bbc3411c.jpg'),
+('HDFC Securities', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/logos/72c31747eaff4892a42266fe167bd422.jpg'),
+('Axis Direct', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/logos/c408d45eb829481f9415cfda4a7f67f8.jpg'),
+('Upstox', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/logos/a98be00544cd42dea492dfaf0ecc14c5.jpg'),
+('5paisa', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/439f87d1c32e4a4a98b8d32c281677bb.jpg'),
+('Kotak Securities', 'https://s3.ap-south-1.amazonaws.com/finology-images/Select/e1997dc85127420da395a8f01d0d6861.jpg');

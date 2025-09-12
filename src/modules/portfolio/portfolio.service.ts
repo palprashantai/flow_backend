@@ -11,6 +11,7 @@ import {
   getAvailableFiltersForPortfolio,
   getFilteredPortfolios,
   getMarketToday,
+  getSegmentNameByServiceId,
   getUserType,
 } from './portfolio.reposistory'
 import { logger } from 'middlewares/logger.middleware'
@@ -105,11 +106,13 @@ export class PortfolioService {
       const methodology = await this.portfolioDetailReposistory.buildMethodologyHTML(service.methodology)
 
       const WEB_URL = process.env.WEB_URL || 'https://webapp.streetgains.in/'
-
+      const segmentRow = await getSegmentNameByServiceId(serviceId)
+      const segmentName = segmentRow?.segmentName || ''
       const serviceDetails = {
         service_id: serviceId,
         service_name: service.service_name,
         service_image: `${service.service_image}`,
+        segment_name: segmentName, // 🔹 added here
         cagr: parseFloat(service.cagr).toFixed(2),
         duration: service.investment_period,
         volatility: service.volatility,

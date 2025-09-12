@@ -44,7 +44,17 @@ export class SmallcaseService {
         throw new BadRequestException('Valid User ID is required')
       }
 
-      const subscriber = await getUserBy({ id: userId }, ['authid', 'broker'])
+      // 🔹 Fetch authid, broker, and icon_url by joining tbl_broker
+      const subscriber = await this.dataSource
+        .createQueryBuilder()
+        .select('s.authid', 'authid')
+        .addSelect('s.broker', 'broker')
+        .addSelect('b.icon_url', 'brokerIcon')
+        .from('tbl_subscriber', 's')
+        .leftJoin('tbl_broker', 'b', 's.broker LIKE CONCAT("%", b.name, "%")')
+        .where('s.id = :id', { id: userId })
+        .getRawOne()
+
       console.log(subscriber)
 
       if (!subscriber?.authid || !subscriber?.broker) {
@@ -57,6 +67,7 @@ export class SmallcaseService {
         success: true,
         authId: subscriber.authid,
         broker: subscriber.broker,
+        brokerIcon: subscriber.brokerIcon,
         message: 'Auth ID and Broker retrieved successfully',
       }
     } catch (error) {

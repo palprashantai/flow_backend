@@ -196,12 +196,14 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
       's.updated_on AS lastUpdated',
       's.access_price AS getAccessPrice',
       's.is_free AS isFree',
+      'seg.segment_name AS segmentName', // 🔹 add this
     ]
 
     let query = ds
       .createQueryBuilder()
       .select(baseSelect)
       .from('tbl_services', 's')
+      .leftJoin('tbl_segment', 'seg', 'seg.id = s.segid') // 🔹 always join segment
       .where('s.isdelete = 0 AND s.service_type = 1 AND s.activate = 1')
 
     // === UserType filters
@@ -353,6 +355,7 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
         service_description: item.service_description,
         access_price_monthly: item.access_price_monthly,
         service_banner: item.service_banner,
+        segmentName: item.segmentName,
         riskTag: item.riskTag,
         return: { period: '1Y CAGR', value: parseFloat(item.returnValue || 0) },
         minInvestment: parseInt(item.minInvestment || 0),
@@ -381,6 +384,17 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
     logger.error('🔴 Error in getFilteredPortfolios:', error)
     throw new InternalServerErrorException('Failed to fetch portfolios')
   }
+}
+
+export async function getSegmentNameByServiceId(serviceId: number) {
+  const ds = await dataSource
+  return await ds
+    .createQueryBuilder()
+    .select('seg.segment_name', 'segmentName')
+    .from('tbl_segment', 'seg')
+    .innerJoin('tbl_services', 'srv', 'srv.segid = seg.id')
+    .where('srv.id = :serviceId', { serviceId })
+    .getRawOne()
 }
 
 export async function getAvailableFiltersForPortfolio(): Promise<Record<string, any[]>> {
