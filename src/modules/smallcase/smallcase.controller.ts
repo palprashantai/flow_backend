@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import {
@@ -19,6 +19,7 @@ export class SmallcaseController {
   @Get('auth')
   @Auth()
   @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get user Auth ID',
     description: 'Retrieves the Smallcase Auth ID for the authenticated user.',

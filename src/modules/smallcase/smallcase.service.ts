@@ -55,7 +55,6 @@ export class SmallcaseService {
         .where('s.id = :id', { id: userId })
         .getRawOne()
 
-      console.log(subscriber)
 
       if (!subscriber?.authid || !subscriber?.broker) {
         throw new NotFoundException('No Auth ID or Broker found for this user')
@@ -64,6 +63,7 @@ export class SmallcaseService {
       this.logger.info(`Auth ID and Broker retrieved for user: ${userId}`)
 
       return {
+        statusCode: 200,
         success: true,
         authId: subscriber.authid,
         broker: subscriber.broker,

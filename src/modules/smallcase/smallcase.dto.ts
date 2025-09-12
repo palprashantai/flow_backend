@@ -152,6 +152,9 @@ export class MapSmallcaseAuthResponseDto {
 }
 
 export class GetAuthResponseDto {
+  @ApiProperty({ example: 200 })
+  statusCode: 200
+
   @ApiProperty({ example: true })
   success: boolean
 
