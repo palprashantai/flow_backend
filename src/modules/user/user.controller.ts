@@ -1,4 +1,14 @@
-import { BadRequestException, Body, Controller, Get, InternalServerErrorException, Param, Post, Query, UnauthorizedException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Param,
+  Post,
+  Query,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { UserService } from './user.service'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
@@ -92,7 +102,7 @@ export class UserController {
     }
   }
 
-    @Post('registerReferral')
+  @Post('registerReferral')
   @Auth()
   @ApiBearerAuth()
   @ApiOperation({

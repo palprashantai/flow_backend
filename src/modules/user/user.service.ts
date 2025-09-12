@@ -217,32 +217,30 @@ export class UserService {
     }
   }
 
-  async getOrderListing(userId: number, page = 1, limit = 10) {
-    try {
-      const skip = (page - 1) * limit
+async getOrderListing(userId: number, page = 1, limit = 10) {
+  try {
+    const skip = (page - 1) * limit;
 
-      // Get orders
-      const orders = await getSubscriberOrders(userId, skip, limit)
-      if (!orders?.length) throw new Error('No orders found for this subscriber')
+    // Get orders
+    const orders = await getSubscriberOrders(userId, skip, limit);
+    if (!orders?.length) throw new Error('No orders found for this subscriber');
 
-      // Map to response
-      const mappedOrders = orders.map((order: any) => ({
-        orderSummary: `${order.service_name || ''} - ${order.trade || ''}`,
-        researchFee: parseFloat(order.research_fee) || 0,
-        taxAmount: parseFloat(order.tax_amt) || 0,
-        discountAmount: parseFloat(order.discount_amt) || 0,
-        totalPaid: parseFloat(order.actual_amount) || 0,
-        orderDate: order.payment_date || null,
-        transactionId: order.transactionid || null,
-        orderStatus: order.order_approval === 1 ? 'Approved' : 'Pending',
-      }))
+    // Map to response
+    const mappedOrders = orders.map((order: any) => ({
+      serviceName: order.service_name || '',
+      serviceImage: order.service_image || null,
+      subscribedOn: order.subscribed_on,
+      subscriptionPlan: order.plan_type === 1 ? '1 Month' : 'Credits',
+      amountPaid: parseFloat(order.amount_paid) || 0,
+      discountApplied: parseFloat(order.discount_applied) || 0,
+    }));
 
-      return mappedOrders
-    } catch (error) {
-      this.logger.error('Error in OrdersService.getOrderListing:', error.message || error)
-      throw error
-    }
+    return mappedOrders;
+  } catch (error) {
+    this.logger.error('Error in OrdersService.getOrderListing:', error.message || error);
+    throw error;
   }
+}
 
   async getMySubscriptions(userId: number, page = 1, limit = 10) {
     try {

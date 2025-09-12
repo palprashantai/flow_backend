@@ -290,29 +290,56 @@ export async function findPushNotifySubscriber(nid: number, mobileno: string) {
   return result
 }
 
+// export async function getSubscriberOrders(userId: number, skip = 0, limit = 10) {
+//   const ds = await dataSource
+
+//   const orders = await ds
+//     .createQueryBuilder()
+//     .select([
+//       'o.id AS id',
+//       'o.actual_amount AS actual_amount',
+//       'o.payment_date AS payment_date',
+//       'o.transactionid AS transactionid',
+//       'o.order_approval AS order_approval',
+//       'os.trade AS trade',
+//       'o.research_fee AS research_fee',
+//       'o.tax_amt AS tax_amt',
+//       'o.discount_amt AS discount_amt',
+//       's.service_name AS service_name',
+//     ])
+//     .from('tbl_order', 'o')
+//     .leftJoin('tbl_order_sub', 'os', 'os.order_id = o.id')
+//     .leftJoin('tbl_services', 's', 's.id = os.serviceid')
+//     .where('o.isdelete = 0 AND o.subscriberid = :subId', { subId: userId })
+//     .andWhere('s.service_type = :type', { type: 1 }) // 🔥 service type = 1
+//     .orderBy('o.id', 'DESC')
+//     .offset(skip)
+//     .limit(limit)
+//     .getRawMany()
+
+//   return orders
+// }
+
 export async function getSubscriberOrders(userId: number, skip = 0, limit = 10) {
   const ds = await dataSource
 
   const orders = await ds
     .createQueryBuilder()
     .select([
-      'o.id AS id',
-      'o.actual_amount AS actual_amount',
-      'o.payment_date AS payment_date',
-      'o.transactionid AS transactionid',
-      'o.order_approval AS order_approval',
-      'os.trade AS trade',
-      'o.research_fee AS research_fee',
-      'o.tax_amt AS tax_amt',
-      'o.discount_amt AS discount_amt',
-      's.service_name AS service_name',
+      's.id AS id',
+      's.activation_date AS subscribed_on',
+      's.amount AS amount_paid',
+      // 's.discount_amt AS discount_applied',
+      's.stype AS subscription_type',
+      's.plantype AS plan_type',
+      'sv.service_name AS service_name',
+      'sv.service_image AS service_image',
     ])
-    .from('tbl_order', 'o')
-    .leftJoin('tbl_order_sub', 'os', 'os.order_id = o.id')
-    .leftJoin('tbl_services', 's', 's.id = os.serviceid')
-    .where('o.isdelete = 0 AND o.subscriberid = :subId', { subId: userId })
-    .andWhere('s.service_type = :type', { type: 1 }) // 🔥 service type = 1
-    .orderBy('o.id', 'DESC')
+    .from('tbl_subscription', 's')
+    .leftJoin('tbl_services', 'sv', 'sv.id = s.serviceid')
+    .where('s.isdelete = 0 AND s.subscriberid = :subId', { subId: userId })
+    .andWhere('sv.service_type = :stype', { stype: 1 }) // ✅ service_type = 1
+    .orderBy('s.id', 'DESC')
     .offset(skip)
     .limit(limit)
     .getRawMany()
