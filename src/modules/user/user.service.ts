@@ -3,7 +3,6 @@ import { logger } from 'middlewares/logger.middleware'
 import { getUserBy } from 'modules/auth/auth.repository'
 import moment from 'moment'
 import {
-  findPushNotifySubscriber,
   findSubscriberBillingDetails,
   findSubscriberWithDoc,
   getGeneralPushNotifications,
@@ -25,6 +24,7 @@ import NodeCache from 'node-cache'
 import { Subscriber } from 'modules/auth/auth.entity'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
+import { dataSource } from 'databases/data-source'
 
 @Injectable()
 export class UserService {
@@ -217,30 +217,30 @@ export class UserService {
     }
   }
 
-async getOrderListing(userId: number, page = 1, limit = 10) {
-  try {
-    const skip = (page - 1) * limit;
+  async getOrderListing(userId: number, page = 1, limit = 10) {
+    try {
+      const skip = (page - 1) * limit
 
-    // Get orders
-    const orders = await getSubscriberOrders(userId, skip, limit);
-    if (!orders?.length) throw new Error('No orders found for this subscriber');
+      // Get orders
+      const orders = await getSubscriberOrders(userId, skip, limit)
+      if (!orders?.length) throw new Error('No orders found for this subscriber')
 
-    // Map to response
-    const mappedOrders = orders.map((order: any) => ({
-      serviceName: order.service_name || '',
-      serviceImage: order.service_image || null,
-      subscribedOn: order.subscribed_on,
-      subscriptionPlan: order.plan_type === 1 ? '1 Month' : 'Credits',
-      amountPaid: parseFloat(order.amount_paid) || 0,
-      discountApplied: parseFloat(order.discount_applied) || 0,
-    }));
+      // Map to response
+      const mappedOrders = orders.map((order: any) => ({
+        serviceName: order.service_name || '',
+        serviceImage: order.service_image || null,
+        subscribedOn: order.subscribed_on,
+        subscriptionPlan: order.plan_type === 1 ? '1 Month' : 'Credits',
+        amountPaid: parseFloat(order.amount_paid) || 0,
+        discountApplied: parseFloat(order.discount_applied) || 0,
+      }))
 
-    return mappedOrders;
-  } catch (error) {
-    this.logger.error('Error in OrdersService.getOrderListing:', error.message || error);
-    throw error;
+      return mappedOrders
+    } catch (error) {
+      this.logger.error('Error in OrdersService.getOrderListing:', error.message || error)
+      throw error
+    }
   }
-}
 
   async getMySubscriptions(userId: number, page = 1, limit = 10) {
     try {
@@ -464,44 +464,208 @@ async getOrderListing(userId: number, page = 1, limit = 10) {
     }
   }
 
+  // async getGeneralNotifications(subscriberid: number, page = 1, limit = 10) {
+  //   try {
+  //     const offset = (page - 1) * limit
+  //     const cacheKey = `general_notifications_${subscriberid}_p${page}_l${limit}`
+
+  //     // Try to fetch from cache
+  //     const cached = await this.cache.get(cacheKey)
+  //     if (cached) return cached
+
+  //     // 1. Get subscriber
+  //     const subscriber = await getUserBy({ id: subscriberid }, ['id', 'mobileno', 'created_on'])
+  //     const { mobileno, created_on } = subscriber
+
+  //     // 2. Find user (no need for created_on now)
+  //     // const user = await this.dataSource
+  //     //   .createQueryBuilder()
+  //     //   .select(['u.id AS id'])
+  //     //   .from('tbl_userinfo', 'u')
+  //     //   .where('u.token = :token AND u.user_mob = :mobileno', { token, mobileno })
+  //     //   .orderBy('u.id', 'ASC')
+  //     //   .limit(1)
+  //     //   .getRawOne()
+
+  //     // 3. Build general notification query
+  //     const notifyId = subscriber?.id ?? 0
+  //     const allGeneral = await getGeneralPushNotifications(notifyId, created_on.toISOString())
+
+  //     const allPush = await getPushNotifications(notifyId, created_on.toISOString())
+
+  //     // 5. Process and merge
+  //     const notifyresponse: any[] = []
+
+  //     for (const post of allGeneral) {
+  //       if (post.datatype === 0) {
+  //         const exists = await findPushNotifySubscriber(post.id, mobileno)
+  //         if (!exists) continue
+  //       }
+
+  //       const created = post.created_on
+  //         ? new Date(post.created_on).toLocaleString('en-GB', {
+  //             day: '2-digit',
+  //             month: '2-digit',
+  //             year: 'numeric',
+  //             hour: '2-digit',
+  //             minute: '2-digit',
+  //             hour12: true,
+  //           })
+  //         : ''
+
+  //       notifyresponse.push({
+  //         id: post.id,
+  //         title: post.title,
+  //         message: post.message,
+  //         src_url: post.src_url,
+  //         nurl: post.nurl,
+  //         notifyid: post.notifyid,
+  //         created_on: post.created_on,
+  //         url: post.notifyid === 0 && post.src_url ? post.src_url : post.nurl || '',
+  //         created,
+  //       })
+  //     }
+
+  //     for (const post of allPush) {
+  //       const created = post.created_on
+  //         ? new Date(post.created_on).toLocaleString('en-GB', {
+  //             day: '2-digit',
+  //             month: '2-digit',
+  //             year: 'numeric',
+  //             hour: '2-digit',
+  //             minute: '2-digit',
+  //             hour12: true,
+  //           })
+  //         : ''
+
+  //       notifyresponse.push({
+  //         id: post.id,
+  //         title: post.title,
+  //         message: post.message,
+  //         src_url: post.src_url,
+  //         nurl: post.nurl,
+  //         notifyid: post.notifyid,
+  //         created_on: post.created_on,
+  //         url: post.notifyid === 0 && post.src_url ? post.src_url : post.nurl || '',
+  //         created,
+  //       })
+  //     }
+
+  //     // Sort all notifications
+  //     notifyresponse.sort((a, b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime())
+
+  //     const total = notifyresponse.length
+  //     const paginatedData = notifyresponse.slice(offset, offset + limit)
+
+  //     const response = {
+  //       success: true,
+  //       message: 'Success',
+  //       result: {
+  //         total,
+  //         page,
+  //         limit,
+  //         notificationlist: paginatedData,
+  //       },
+  //     }
+
+  //     // Cache result
+  //     const ttl = Number(process.env.CACHE_TTL_SECONDS) || 300
+  //     await this.cache.set(cacheKey, response, ttl)
+
+  //     return response
+  //   } catch (error) {
+  //     this.logger.error('Error fetching general notifications:', error)
+  //     return {
+  //       success: false,
+  //       message: 'Something went wrong while fetching notifications',
+  //     }
+  //   }
+  // }
+
   async getGeneralNotifications(subscriberid: number, page = 1, limit = 10) {
     try {
       const offset = (page - 1) * limit
       const cacheKey = `general_notifications_${subscriberid}_p${page}_l${limit}`
 
-      // Try to fetch from cache
+      // 1. Try to fetch from cache
       const cached = await this.cache.get(cacheKey)
       if (cached) return cached
 
-      // 1. Get subscriber
+      // 2. Get subscriber
       const subscriber = await getUserBy({ id: subscriberid }, ['id', 'mobileno', 'created_on'])
+      if (!subscriber) {
+        const errorResponse = { success: false, message: 'No valid subscriber found for this ID' }
+        await this.cache.set(cacheKey, errorResponse, 60)
+        return errorResponse
+      }
       const { mobileno, created_on } = subscriber
-
-      // 2. Find user (no need for created_on now)
-      // const user = await this.dataSource
-      //   .createQueryBuilder()
-      //   .select(['u.id AS id'])
-      //   .from('tbl_userinfo', 'u')
-      //   .where('u.token = :token AND u.user_mob = :mobileno', { token, mobileno })
-      //   .orderBy('u.id', 'ASC')
-      //   .limit(1)
-      //   .getRawOne()
-
-      // 3. Build general notification query
       const notifyId = subscriber?.id ?? 0
-      const allGeneral = await getGeneralPushNotifications(notifyId, created_on.toISOString())
 
-      const allPush = await getPushNotifications(notifyId, created_on.toISOString())
+      // 3. Fetch all notifications in parallel
+      const [allGeneral, allPush, allPortfolio] = await Promise.all([
+        getGeneralPushNotifications(notifyId, created_on.toISOString()),
+        getPushNotifications(notifyId, created_on.toISOString()),
+        await (
+          await dataSource
+        )
+          .createQueryBuilder()
+          .select([
+            'pf.id AS id',
+            'pf.title AS title',
+            'pf.message AS message',
+            'pf.src_url AS src_url',
+            'pf.src_url AS nurl',
+            'pf.notifyid AS notifyid',
+            'pf.datatype AS datatype',
+            'pf.created_on AS created_on',
+          ])
+          .from('tbl_portfolio_pushnotification', 'pf')
+          .where('(pf.datatype = 1 OR pf.notifyid = 0 OR pf.notifyid = :notifyId)', { notifyId })
+          .andWhere(created_on ? 'pf.created_on > :createdOn' : '1=1', { createdOn: created_on })
+          .orderBy('pf.created_on', 'DESC')
+          .getRawMany(),
+      ])
 
-      // 5. Process and merge
+      // 4. Batch-check "exists" for datatype=0 notifications
+      const generalIdsToCheck = allGeneral.filter((n) => n.datatype === 0).map((n) => n.id)
+      const portfolioIdsToCheck = allPortfolio.filter((n) => n.datatype === 0).map((n) => n.id)
+
+      const [generalExists, portfolioExists] = await Promise.all([
+        generalIdsToCheck.length
+          ? await (
+              await dataSource
+            )
+              .createQueryBuilder()
+              .select('gps.nid AS nid')
+              .from('tbl_gen_pushnotifysub', 'gps')
+              .where('gps.nid IN (:...ids) AND gps.mobile = :mobileno', {
+                ids: generalIdsToCheck,
+                mobileno,
+              })
+              .getRawMany()
+          : [],
+        portfolioIdsToCheck.length
+          ? await (
+              await dataSource
+            )
+              .createQueryBuilder()
+              .select('pps.nid AS nid')
+              .from('tbl_portfolio_pushnotifysub', 'pps')
+              .where('pps.nid IN (:...ids) AND pps.mobile = :mobileno', {
+                ids: portfolioIdsToCheck,
+                mobileno,
+              })
+              .getRawMany()
+          : [],
+      ])
+
+      const generalAllowedIds = new Set(generalExists.map((r) => r.nid))
+      const portfolioAllowedIds = new Set(portfolioExists.map((r) => r.nid))
+
+      // 5. Merge and format notifications
       const notifyresponse: any[] = []
 
-      for (const post of allGeneral) {
-        if (post.datatype === 0) {
-          const exists = await findPushNotifySubscriber(post.id, mobileno)
-          if (!exists) continue
-        }
-
+      const formatNotif = (post: any) => {
         const created = post.created_on
           ? new Date(post.created_on).toLocaleString('en-GB', {
               day: '2-digit',
@@ -512,8 +676,7 @@ async getOrderListing(userId: number, page = 1, limit = 10) {
               hour12: true,
             })
           : ''
-
-        notifyresponse.push({
+        return {
           id: post.id,
           title: post.title,
           message: post.message,
@@ -523,37 +686,25 @@ async getOrderListing(userId: number, page = 1, limit = 10) {
           created_on: post.created_on,
           url: post.notifyid === 0 && post.src_url ? post.src_url : post.nurl || '',
           created,
-        })
+        }
+      }
+
+      for (const post of allGeneral) {
+        if (post.datatype === 0 && !generalAllowedIds.has(post.id)) continue
+        notifyresponse.push(formatNotif(post))
       }
 
       for (const post of allPush) {
-        const created = post.created_on
-          ? new Date(post.created_on).toLocaleString('en-GB', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-            })
-          : ''
-
-        notifyresponse.push({
-          id: post.id,
-          title: post.title,
-          message: post.message,
-          src_url: post.src_url,
-          nurl: post.nurl,
-          notifyid: post.notifyid,
-          created_on: post.created_on,
-          url: post.notifyid === 0 && post.src_url ? post.src_url : post.nurl || '',
-          created,
-        })
+        notifyresponse.push(formatNotif(post))
       }
 
-      // Sort all notifications
-      notifyresponse.sort((a, b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime())
+      for (const post of allPortfolio) {
+        if (post.datatype === 0 && !portfolioAllowedIds.has(post.id)) continue
+        notifyresponse.push(formatNotif(post))
+      }
 
+      // 6. Sort + paginate
+      notifyresponse.sort((a, b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime())
       const total = notifyresponse.length
       const paginatedData = notifyresponse.slice(offset, offset + limit)
 
@@ -568,7 +719,7 @@ async getOrderListing(userId: number, page = 1, limit = 10) {
         },
       }
 
-      // Cache result
+      // 7. Cache result
       const ttl = Number(process.env.CACHE_TTL_SECONDS) || 300
       await this.cache.set(cacheKey, response, ttl)
 

@@ -52,3 +52,16 @@ export class VerifyOtpDto {
   @IsString()
   otp: string
 }
+
+export class GetJWTDto {
+  @ApiProperty({ example: '9876543210', description: 'Mobile number of the user' })
+  @IsNotEmpty()
+  @IsString()
+  @Length(10, 10)
+  usermobile: string
+
+  @ApiProperty({ example: '123456', description: 'OTP received by the user' })
+  @IsNotEmpty()
+  @IsString()
+  otp: string
+}

@@ -1,13 +1,22 @@
 import { BadRequestException, Body, Controller, InternalServerErrorException, Post } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { AuthService } from './auth.service'
-import { GetOtpNewDto, OtpVerificationDto, RegisterDto, VerifyOtpDto } from './auth.dto'
+import { GetJWTDto, GetOtpNewDto, OtpVerificationDto, RegisterDto, VerifyOtpDto } from './auth.dto'
 import { Auth, GetUserId } from './auth.guard'
 
 @Controller('appApi/auth')
 @ApiTags('Authentication')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('jwt-token')
+  @ApiOperation({ summary: 'Generate JWT Token' })
+  @ApiResponse({ status: 200, description: 'Token sent successfully' })
+  @ApiResponse({ status: 400, description: 'Mobile number is required' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  async loginOtp(@Body() dto: GetJWTDto) {
+    return this.authService.getJWT(dto.usermobile, dto.otp)
+  }
 
   @Post('getotp')
   @ApiOperation({ summary: 'NEW: Generate and send OTP (New)' })

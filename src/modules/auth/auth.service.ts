@@ -31,9 +31,18 @@ export class AuthService {
     @InjectRepository(WorkflowLeadCreation)
     private readonly workflowLeadCreationRepository: Repository<WorkflowLeadCreation>,
     @InjectRepository(UserInfo)
-    private readonly userInfoRepository: Repository<UserInfo>,
+    private readonly userInfoRepository: Repository<UserInfo>
     // private readonly grpcClient: GrpcClientService
   ) {}
+
+  async getJWT(mobile: string, otp: string): Promise<{ token: string }> {
+    // ✅ For demo: accept OTP = "123456"
+
+    const payload = { mobile, otp }
+    const token = await this.jwtService.signAsync(payload, { expiresIn: '1h' })
+
+    return { token }
+  }
 
   /** Generates a token for authentication.
    * @param {number} id

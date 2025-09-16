@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import {
   ConnectTransactionDto,
@@ -47,14 +47,20 @@ export class SmallcaseController {
   @Get('order')
   @Auth()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Fetch latest Smallcase transaction data' })
+  @ApiOperation({ summary: 'Fetch Smallcase transaction data by query param' })
+  @ApiQuery({
+    name: 'transactionid',
+    type: String,
+    required: false,
+    description: 'Transaction ID of the Smallcase order',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Returns parsed JSON from latest smallcase webhook',
+    description: 'Transaction retrieved successfully',
     schema: {
       example: {
         success: true,
-        message: 'Latest order retrieved successfully',
+        message: 'Transaction retrieved successfully',
         result: {
           order_id: 'abc123',
           status: 'completed',
@@ -63,14 +69,14 @@ export class SmallcaseController {
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'No transactions found' })
-  @ApiResponse({ status: 500, description: 'Failed to load latest transaction' })
-  async getLatestTransaction() {
-    const result = await this.smallcaseService.getLatestTransactionData()
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
+  @ApiResponse({ status: 500, description: 'Failed to load transaction' })
+  async getTransaction(@Query('transactionid') transactionid?: string) {
+    const result = await this.smallcaseService.getTransactionData(transactionid)
 
     return {
       success: true,
-      message: 'Latest order retrieved successfully',
+      message: transactionid ? `Transaction ${transactionid} retrieved successfully` : 'Latest order retrieved successfully',
       result,
     }
   }

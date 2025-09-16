@@ -82,26 +82,26 @@ export class SmallcaseService {
     }
   }
 
-  async getLatestTransactionData(): Promise<any> {
+  async getTransactionData(transactionid?: string): Promise<any> {
     try {
-      const record = await this.dataSource
-        .createQueryBuilder()
-        .select('*')
-        .from('tbl_smallcase_apilog', 'log')
-        // .where('log.transactionid = :transactionid', { transactionid })
-        .orderBy('log.id', 'DESC')
-        .limit(1)
-        .getRawOne()
+      const query = this.dataSource.createQueryBuilder().select('*').from('tbl_smallcase_apilog', 'log')
 
-      if (!record) {
-        throw new NotFoundException('Transaction not found')
+      if (transactionid) {
+        query.where('log.transactionid = :transactionid', { transactionid }).orderBy('log.id', 'DESC') // in case multiple logs exist
+      } else {
+        query.orderBy('log.id', 'DESC').limit(1) // fallback: latest
       }
 
-      const webhookData = JSON.parse(record.message)
-      return webhookData
+      const record = await query.getRawOne()
+
+      if (!record) throw new NotFoundException('Transaction not found')
+
+      return JSON.parse(record.message)
     } catch (err) {
-      this.logger.error('getTransactionData error:', err)
-      throw new InternalServerErrorException('Failed to load transaction')
+      this.logger.error(`getTransactionData error: ${err.message}`, err.stack || err)
+
+      if (err instanceof NotFoundException) throw err // 🔹 keep exact 404 error
+      throw new InternalServerErrorException(err.message || 'Failed to load transaction')
     }
   }
 
