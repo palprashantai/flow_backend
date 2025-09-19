@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common'
-import { CreatePlanDto, CreatePortfolioOrderDto, CreateSubscriptionDto } from './payment.dto'
+import { CheckCouponDto, CreatePlanDto, CreatePortfolioOrderDto, CreateSubscriptionDto } from './payment.dto'
 import Razorpay from 'razorpay'
 import { DataSource } from 'typeorm'
 import dayjs from 'dayjs'
@@ -328,6 +328,115 @@ export class PaymentService {
     } catch (error) {
       this.logger.error('Error fetching Razorpay key:', error)
       throw new InternalServerErrorException(error.message || 'Internal Server Error')
+    }
+  }
+
+  async checkCoupon(dto: CheckCouponDto, subscriberId: number) {
+    try {
+      const { couponcode, serviceid, planid } = dto
+      if (!subscriberId || !couponcode) {
+        return { success: false, message: 'Parameter is missing' }
+      }
+
+      const today = new Date().toISOString().slice(0, 10)
+
+      // 1. Check subscriber exists
+      const subscriber = await this.dataSource
+        .createQueryBuilder()
+        .select('id')
+        .from('tbl_subscriber', 's')
+        .where('s.isdelete = 0')
+        .andWhere('s.id = :subscriberId', { subscriberId })
+        .getRawOne()
+
+      if (!subscriber) return { success: false, message: 'No Subscriber Found...' }
+
+      // 2. Check portfolio offer
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select('po.*')
+        .from('tbl_portfolio_offers', 'po')
+        .where('po.isdelete = 0')
+        .andWhere('po.startdate <= :today', { today })
+        .andWhere('po.enddate >= :today', { today })
+        .andWhere('po.offercode = :couponcode', { couponcode })
+        .andWhere('(po.serviceid = 0 OR po.serviceid = :serviceid)', { serviceid })
+
+      if (planid) {
+        qb.andWhere('(po.planid IS NULL OR po.planid = :planid)', { planid })
+      }
+
+      const offer = await qb.orderBy('po.id', 'DESC').limit(1).getRawOne()
+
+      console.log(offer)
+
+      // 3. Once-per-user check
+      if (offer.once_per_user) {
+        const usedCount = await this.dataSource
+          .createQueryBuilder()
+          .select('COUNT(*)', 'used')
+          .from('tbl_order', 'ord')
+          .where('ord.offercode = :couponcode', { couponcode })
+          .andWhere('ord.offer_type = 0')
+          .andWhere('ord.subscriberid = :subscriberId', { subscriberId })
+          .getRawOne()
+
+        if (usedCount?.used > 0) return { success: false, message: 'Invalid Code.' }
+      }
+
+      // 4. Fetch plan/subtotal from tbl_services_sub
+      const query = this.dataSource
+        .createQueryBuilder()
+        .select(['ss.credits', 'ss.credits_price'])
+        .from('tbl_services_sub', 'ss')
+        .where('ss.sid = :serviceid', { serviceid })
+
+      if (planid) {
+        query.andWhere('ss.productid = :planid', { planid })
+      }
+
+      const planData = await query.getRawOne()
+
+      const subTotal = planData?.credits_price || 0
+
+      let total = subTotal
+
+      // 5. Apply discount
+      const discountValue = offer.offervalue
+      total -= discountValue
+
+      // 6. Apply tax
+      const taxRes = await this.dataSource
+        .createQueryBuilder()
+        .select('tax_percentage')
+        .from('tbl_company', 'c')
+        .where('c.isdelete = 0')
+        .andWhere('c.id = 1')
+        .getRawOne()
+
+      const tax = taxRes?.tax_percentage || 0
+      const taxAmount = Math.round((total * tax) / 100)
+      total += taxAmount
+
+      // 7. Return response
+      return {
+        success: true,
+        message: 'Coupon Code Applied Successfully.',
+        result: {
+          discount: discountValue,
+          code: couponcode,
+          price_data: {
+            sub_total: subTotal,
+            discount: discountValue,
+            tax,
+            tax_amount: taxAmount,
+            final_amount: total,
+          },
+        },
+      }
+    } catch (error) {
+      console.error('Error in checkCoupon:', error)
+      throw new BadRequestException('Failed to apply coupon')
     }
   }
 

@@ -138,3 +138,21 @@ export class CreatePortfolioOrderDto {
   @IsOptional()
   use_balance?: boolean
 }
+
+
+export class CheckCouponDto {
+  @ApiProperty({ description: 'Coupon code to apply', example: 'WELCOME10' })
+  @IsNotEmpty()
+  @IsString()
+  couponcode: string;
+
+  @ApiProperty({ description: 'Service ID', example: 5 })
+  @IsNotEmpty()
+  @IsNumber()
+  serviceid: number;
+
+  @ApiProperty({ description: 'Optional Plan ID', example: 'PLAN123', required: false })
+  @IsOptional()
+  @IsString()
+  planid?: string;
+}

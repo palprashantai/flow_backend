@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Param, Post, UnauthorizedException } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiExcludeEndpoint, ApiBody } from '@nestjs/swagger'
 
-import { CreateSubscriptionDto, CreatePlanDto, CreateOrderDto, CreatePortfolioOrderDto } from './payment.dto'
+import { CreateSubscriptionDto, CreatePlanDto, CreateOrderDto, CreatePortfolioOrderDto, CheckCouponDto } from './payment.dto'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { PaymentService } from './payment.service'
 
@@ -136,6 +136,20 @@ export class PaymentController {
       throw new BadRequestException('offerCode are required')
     }
     return this.paymentService.applyOffer(offerCode)
+  }
+
+  @Post('check-coupon')
+  @ApiBearerAuth()
+  @Auth()
+  @ApiOperation({ summary: 'Check and apply a coupon code for portfolio offer' })
+  @ApiResponse({ status: 200, description: 'Coupon applied successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input or coupon not applicable' })
+  async checkCoupon(@Body() dto: CheckCouponDto, @GetUserId('id') userId: number) {
+    if (!userId) throw new BadRequestException('Invalid user')
+    if (!dto.couponcode || !dto.serviceid) throw new BadRequestException('couponcode and serviceid are required')
+
+    const result = await this.paymentService.checkCoupon(dto, userId)
+    return result
   }
 
   @Post('payment-success-portfolio')
