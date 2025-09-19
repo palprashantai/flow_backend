@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
@@ -8,7 +8,7 @@ import { AppService } from './app.service'
 import { HttpModule } from '@nestjs/axios'
 import { dataSourceOptions } from './databases/data-source'
 import { JwtModule } from '@nestjs/jwt'
-import { RateLimitMiddleware } from 'middlewares/rate-limit.middleware'
+// import { RateLimitMiddleware } from 'middlewares/rate-limit.middleware'
 import { AuthModule } from 'modules/auth/auth.module'
 import { CommonModule } from 'modules/common/common.module'
 import { SettingModule } from 'modules/setting/setting.module'
@@ -51,8 +51,9 @@ import { GrpcClientModule } from 'grpc/grpc-client.module'
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RateLimitMiddleware).forRoutes({ path: '*', method: RequestMethod.POST })
-  }
-}
+export class AppModule {}
+// implements NestModule {
+//   // configure(consumer: MiddlewareConsumer) {
+//   //   // consumer.apply(RateLimitMiddleware).forRoutes({ path: '*', method: RequestMethod.POST })
+//   // }
+// }
