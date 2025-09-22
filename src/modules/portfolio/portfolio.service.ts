@@ -325,15 +325,23 @@ export class PortfolioService {
       // const serviceOffers = await fetchServiceOffers(service_id)
 
       // No plan-specific offers anymore
-      const formattedPlans = plans.map((p: any) => ({
-        id: p.id,
-        planid: p.productid,
-        title: `${p.credits} Month${p.credits > 1 ? 's' : ''}`,
-        price: p.credits_price,
-        discount_code: p.discount_code ?? null,
-        discount_price: p.discount_price ?? null,
-        offers: [], // ✅ empty since planOffers removed
-      }))
+      const formattedPlans = plans.map((p: any) => {
+        const months = p.credits > 0 ? p.credits : 1
+        const price = Number(p.credits_price) || 0
+        const discountPrice = Number(p.discount_price) || 0
+
+        return {
+          id: p.id,
+          planid: p.productid,
+          title: `${months} Month${months > 1 ? 's' : ''}`,
+          price: price,
+          discount_code: p.discount_code ?? null,
+          price_per_month: Math.floor(price / months),
+          discount_price: discountPrice,
+          discount_price_per_month: discountPrice > 0 ? Math.floor(discountPrice / months) : 0,
+          offers: [], // ✅ empty since planOffers removed
+        }
+      })
 
       return {
         success: true,

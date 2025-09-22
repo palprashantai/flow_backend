@@ -331,7 +331,7 @@ export class PaymentService {
     }
   }
 
-  async checkCoupon(dto: CheckCouponDto, subscriberId: number) {
+  async checkCoupon(dto: CheckCouponDto, subscriberId: number) { 
     try {
       const { couponcode, serviceid, planid } = dto
       if (!subscriberId || !couponcode) {
