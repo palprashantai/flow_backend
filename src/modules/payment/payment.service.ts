@@ -331,7 +331,7 @@ export class PaymentService {
     }
   }
 
-  async checkCoupon(dto: CheckCouponDto, subscriberId: number) { 
+  async checkCoupon(dto: CheckCouponDto, subscriberId: number) {
     try {
       const { couponcode, serviceid, planid } = dto
       if (!subscriberId || !couponcode) {
@@ -501,12 +501,13 @@ export class PaymentService {
           }
         }
       }
-
+      const invoiceAmount = planData.discount_price || amount
       // 4. Generate invoice
-      const invoiceArr = await this.getOrderInvoice(amount)
+      const invoiceArr = await this.getOrderInvoice(invoiceAmount)
       const orderId = invoiceArr.invoiceno
       const taxAmount = 0
 
+      console.log(planData.discount_price, planData.discount_code)
       // 5. Insert/update order
       const existingOrder = await this.dataSource
         .createQueryBuilder()
@@ -523,12 +524,12 @@ export class PaymentService {
           .set({
             subscriberid: userId,
             research_fee: amount,
-            discount_amt: 0,
+            discount_amt: planData.discount_price,
             tax_amt: taxAmount,
-            amount_payable: amount,
+            amount_payable: planData.discount_price || amount,
             actual_amount: amount,
             offerid: offerId,
-            offercode: couponcode,
+            offercode: planData.discount_code,
             offer_type: offerType,
             payment_mode: 'Razorpay',
             payment_date: today,
@@ -550,12 +551,12 @@ export class PaymentService {
             orderid: orderId,
             subscriberid: userId,
             research_fee: amount,
-            discount_amt: 0,
+            discount_amt: planData.discount_price,
             tax_amt: taxAmount,
-            amount_payable: amount,
+            amount_payable: planData.discount_price || amount,
             actual_amount: amount,
             offerid: offerId,
-            offercode: couponcode,
+            offercode: planData.discount_code,
             offer_type: offerType,
             transactionid: transactionId,
             orderinvoiceyear: invoiceArr.invoiceyear,
@@ -589,7 +590,7 @@ export class PaymentService {
             service_subid: serviceSubId,
             subscriberid: userId,
             trade: planData.credits,
-            price: amount,
+            price: planData.discount_price || amount,
           })
           .where('id = :id', { id: existingOrderSub.id })
           .execute()
@@ -605,7 +606,7 @@ export class PaymentService {
             service_subid: serviceSubId,
             subscriberid: userId,
             trade: planData.credits,
-            price: amount,
+            price: planData.discount_price || amount,
           })
           .execute()
         orderSubId = insertOrderSub.raw?.insertId
@@ -690,7 +691,7 @@ export class PaymentService {
           serviceid: serviceId,
           ordersub_id: orderSubId,
           planid: serviceSubId ? String(serviceSubId) : null,
-          amount,
+          amount: planData.discount_price || amount,
           activedate: today,
           expirydate: expiryDate,
           created_on: today,
