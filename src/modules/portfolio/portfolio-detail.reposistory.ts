@@ -116,14 +116,24 @@ export class PortfolioDetailReposistory {
     }
   }
 
-  async getResearchCredits(
-    serviceId: number
-  ): Promise<{ id: number; credits: number; credits_price: number; freepaid: number; stype: number }[]> {
+  async getResearchCredits(serviceId: number): Promise<
+    {
+      id: number
+      credits: number
+      credits_price: number
+      freepaid: number
+      stype: number
+      planId: number
+      discount_code: string | null
+      discount_price: number | null
+    }[]
+  > {
     try {
       return await this.dataSource.query(
-        `SELECT id, credits, credits_price, freepaid, stype, productid AS planId
-         FROM tbl_services_sub
-         WHERE sid = ? AND device_type = 0 AND isdelete = 0`,
+        `SELECT id, credits, credits_price, freepaid, stype, productid AS planId,
+              discount_code, discount_price
+       FROM tbl_services_sub
+       WHERE sid = ? AND device_type = 0 AND isdelete = 0`,
         [serviceId]
       )
     } catch (error) {

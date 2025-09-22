@@ -137,3 +137,6 @@ CREATE TABLE streetgains.tbl_log_streetfolio_events (
   INDEX idx_subscriberid (subscriberid),
   INDEX idx_device_id (device_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE streetgains.tbl_services_sub
+ADD COLUMN discount_code VARCHAR(100) NULL AFTER discount_price;

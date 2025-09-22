@@ -4,7 +4,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 import {
   buildPortfolioHistoryQuery,
   fetchPlansByServiceIdPortfolio,
-  fetchServiceOffers,
+  // fetchServiceOffers,
   fetchStocksByServiceIdPortfolio,
   getAllInsight,
   getAvailableDurationsForPortfolio,
@@ -143,14 +143,18 @@ export class PortfolioService {
           credits_price: number
           freepaid: number
           stype: number
-          planId: string
+          planId: number
+          discount_code: string | null
+          discount_price: number | null
         }[]
       ).map((plan) => ({
         id: plan.id,
-        planId: plan.planId,
+        planId: plan.planId.toString(),
         title: plan.stype === 0 ? `${plan.credits} Credits` : `${plan.credits} ${plan.credits === 1 ? 'Month' : 'Months'}`,
         price: `₹${Number(plan.credits_price).toFixed(2)}`,
         freepaid: plan.freepaid ? 'Free' : 'Paid',
+        discount_code: plan.discount_code ?? null,
+        discount_price: plan.discount_price ? `₹${Number(plan.discount_price).toFixed(2)}` : null,
       }))
 
       function lightenColor(hex: string, factor: number) {
@@ -318,7 +322,7 @@ export class PortfolioService {
       const plans = await fetchPlansByServiceIdPortfolio(service_id)
 
       // Fetch service-wide offers only
-      const serviceOffers = await fetchServiceOffers(service_id)
+      // const serviceOffers = await fetchServiceOffers(service_id)
 
       // No plan-specific offers anymore
       const formattedPlans = plans.map((p: any) => ({
@@ -326,6 +330,8 @@ export class PortfolioService {
         planid: p.productid,
         title: `${p.credits} Month${p.credits > 1 ? 's' : ''}`,
         price: p.credits_price,
+        discount_code: p.discount_code ?? null,
+        discount_price: p.discount_price ?? null,
         offers: [], // ✅ empty since planOffers removed
       }))
 
@@ -334,7 +340,7 @@ export class PortfolioService {
         message: 'Plans retrieved successfully',
         result: {
           plans: formattedPlans,
-          service_offers: serviceOffers, // separate service-wide offers
+          // service_offers: serviceOffers, // separate service-wide offers
           dos: ['Seamlessly place orders in 1 click', 'Get regular re-balance updates'],
           donts: ['Easily start SIPs for disciplined investing'],
         },
