@@ -99,8 +99,12 @@ export class PortfolioService {
         // this.servicesReposistory.getPortfolioHistory(serviceId),
       ])
 
+      function formatIndianNumber(value: number): string {
+        return value.toLocaleString('en-IN')
+      }
+
       const planDetail = planData.length
-        ? `${planData[0].credits_price} / ${planData[0].credits} ${planData[0].credits === 1 ? 'Month' : 'Months'}`
+        ? `${formatIndianNumber(Math.round(planData[0].credits_price / planData[0].credits))} / Month`
         : 'Free'
 
       const methodology = await this.portfolioDetailReposistory.buildMethodologyHTML(service.methodology)

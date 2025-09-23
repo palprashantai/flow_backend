@@ -271,7 +271,7 @@ export async function insertSubscriberDocument(subscriberId: number, pan: string
     .execute()
 }
 
-export async function updateSubscriberState(subscriberId: number, state: string) {
+export async function updateSubscriberState(subscriberId: number, state: number) {
   const ds = await dataSource
 
   await ds.createQueryBuilder().update('tbl_subscriber').set({ state }).where('id = :id', { id: subscriberId }).execute()
