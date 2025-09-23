@@ -7,7 +7,7 @@ import {
   // fetchServiceOffers,
   fetchStocksByServiceIdPortfolio,
   getAllInsight,
-  getAvailableDurationsForPortfolio,
+  // getAvailableDurationsForPortfolio,
   getAvailableFiltersForPortfolio,
   getFilteredPortfolios,
   getMarketToday,
@@ -79,7 +79,7 @@ export class PortfolioService {
       const isExpired = activeSubscription.is_expired
       const isSubscribed = activeSubscription.is_subscribed
       const subscriptionId = activeSubscription.subscriptionid ?? ''
-      const availableDurations = await getAvailableDurationsForPortfolio(serviceId)
+      // const availableDurations = await getAvailableDurationsForPortfolio(serviceId)
 
       const [
         portfolioData,
@@ -258,7 +258,7 @@ export class PortfolioService {
         holdingsDistribution,
         relatedServices,
         livePerformance: assetIdNameArray,
-        availableDurations,
+        availableDurations: [],
       } as {
         cagrInfo: string
         service: any
@@ -272,9 +272,7 @@ export class PortfolioService {
         rebalanceTimeline?: any[]
       }
 
-      if (serviceDetails.is_rebalance) {
-        data.rebalanceTimeline = rebalanceTimelineArr
-      }
+      data.rebalanceTimeline = rebalanceTimelineArr
 
       return {
         status: 'success',
