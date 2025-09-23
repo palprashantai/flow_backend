@@ -1,9 +1,11 @@
-import { BadRequestException, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common'
+import { BadRequestException, Controller, Get, InternalServerErrorException, Param, ParseIntPipe, Post, Query, Res } from '@nestjs/common'
 import { PortfolioService } from './portfolio.service'
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { FilterPortfolioDto } from './portfolio.dto'
 import { getAvailableDurationsForPortfolio } from './portfolio.reposistory'
+import { Response } from 'express'
+import * as fs from 'fs'
 
 @ApiTags('Portfolio')
 @Controller('appApi/portfolio')
@@ -138,7 +140,6 @@ export class PortfolioController {
     }
   }
 
-
   @Get('getPortfolioPlans')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get Portfolio Plans by Service ID' })
@@ -177,11 +178,10 @@ export class PortfolioController {
     return this.portfolioService.getPortfolioPlans(service_id)
   }
 
-  
   @Post('portfolio/stocks')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get portfolio stocks by service ID' })
-    @ApiQuery({
+  @ApiQuery({
     name: 'service_id',
     required: true,
     type: Number,
@@ -207,5 +207,25 @@ export class PortfolioController {
   })
   async getPortfolioStocks(@Query('service_id', ParseIntPipe) service_id: number) {
     return this.portfolioService.getPortfolioStocks(service_id)
+  }
+
+  @Post('export-rebalance-timeline')
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'serviceId', required: true, type: Number })
+  @ApiOperation({ summary: 'Export rebalance timeline entries to Excel by serviceId' })
+  async exportRebalanceTimeline(@Query('serviceId') serviceId: number, @Res() res: Response) {
+    const filePath = await this.portfolioService.exportRebalanceTimeline(serviceId)
+
+    res.download(filePath, (err) => {
+      // After sending the file, delete it from the server
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) console.error('Error deleting exported file:', unlinkErr.message)
+      })
+
+      if (err) {
+        console.error('Error sending file:', err.message)
+        throw new InternalServerErrorException('Error while sending the file')
+      }
+    })
   }
 }

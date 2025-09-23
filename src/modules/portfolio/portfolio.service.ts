@@ -4,6 +4,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 import {
   buildPortfolioHistoryQuery,
   fetchPlansByServiceIdPortfolio,
+  fetchRebalanceTimeline,
   // fetchServiceOffers,
   fetchStocksByServiceIdPortfolio,
   getAllInsight,
@@ -19,6 +20,10 @@ import { FilterPortfolioDto } from './portfolio.dto'
 
 import { getUserBy } from 'modules/auth/auth.repository'
 import { PortfolioDetailReposistory } from './portfolio-detail.reposistory'
+import * as path from 'path'
+import * as fs from 'fs'
+import * as ExcelJS from 'exceljs'
+import moment from 'moment'
 
 @Injectable()
 export class PortfolioService {
@@ -389,6 +394,74 @@ export class PortfolioService {
     } catch (error) {
       console.error('Error fetching portfolio stocks:', error)
       throw new InternalServerErrorException(error.message || 'Internal Server Error')
+    }
+  }
+
+  async exportRebalanceTimeline(serviceId: number): Promise<string> {
+    try {
+      const data = await fetchRebalanceTimeline(serviceId)
+
+      const workbook = new ExcelJS.Workbook()
+      const sheet = workbook.addWorksheet('Portfolio Log')
+
+      // Define columns
+      sheet.columns = [
+        { header: 'Date', key: 'date', width: 15 },
+        { header: 'Constituents', key: 'constituents', width: 30 },
+        { header: 'Weightage', key: 'weightage', width: 15 },
+        { header: 'Status', key: 'status', width: 20 },
+      ]
+
+      sheet.getRow(1).font = { name: 'Tahoma', size: 10, bold: true }
+
+      let tempTimelineId: number | null = null
+
+      data.forEach((row) => {
+        let displayDate = ''
+        if (row.timelineid !== tempTimelineId) {
+          displayDate = moment(row.timeline_created_on).format('DD-MM-YYYY')
+          tempTimelineId = row.timelineid
+        }
+
+        let status = 'No Change'
+        if (row.status === 1) status = 'Added'
+        else if (row.status === 2) status = 'Removed'
+
+        sheet.addRow({
+          date: displayDate,
+          constituents: row.constituents,
+          weightage: row.weightage,
+          status,
+        })
+      })
+
+      // Styling
+      sheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell((cell) => {
+          cell.font = { name: 'Tahoma', size: 10 }
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          }
+        })
+      })
+
+      sheet.pageSetup.orientation = 'landscape'
+      sheet.pageSetup.paperSize = 9 // A4
+
+      const exportPath = path.join(process.cwd(), 'reportdata')
+      if (!fs.existsSync(exportPath)) fs.mkdirSync(exportPath, { recursive: true })
+
+      const fileName = `PortfolioLog_${serviceId}_${moment().format('DD_MM_YYYY_HH_mm')}.xlsx`
+      const fullPath = path.join(exportPath, fileName)
+
+      await workbook.xlsx.writeFile(fullPath)
+      return fullPath
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to export rebalance timeline')
     }
   }
 }

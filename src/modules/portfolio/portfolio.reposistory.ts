@@ -537,6 +537,20 @@ export async function fetchPlansByServiceIdPortfolio(service_id: number) {
   return plans
 }
 
+export async function fetchRebalanceTimeline(serviceId: number) {
+  const ds = await dataSource
+  return ds.query(
+    `SELECT sub.*, timeline.created_on AS timeline_created_on, timeline.id AS timelineid
+     FROM tbl_rebalance_timeline timeline
+     LEFT JOIN tbl_rebalance_timeline_sub sub
+       ON timeline.id = sub.timelineid
+     WHERE timeline.serviceid = ?
+       AND sub.id IS NOT NULL
+     ORDER BY timeline.created_on ASC, sub.id ASC`,
+    [serviceId]
+  )
+}
+
 export async function fetchServiceOffers(serviceId: number) {
   const ds = await dataSource
   return ds.query(
