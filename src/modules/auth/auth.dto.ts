@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator'
+import { Transform } from 'class-transformer'
+
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator'
 
 export class GetOtpNewDto {
   @ApiProperty({ example: '9876543210', description: 'User mobile number (10 digits)' })
@@ -30,9 +32,11 @@ export class OtpVerificationDto {
   @Length(4, 4)
   otp: string
 
-  @ApiProperty({ example: 'fcm-token-123', description: 'FCM token' })
+  @ApiProperty({ example: 'fcm-token-123', description: 'FCM token', required: false })
+  @IsOptional()
+  @Transform(({ value }) => (value === null || value === undefined ? '' : String(value)))
   @IsString()
-  fcmtoken: string
+  fcmtoken?: string
 }
 
 export class RegisterDto {
