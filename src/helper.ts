@@ -77,3 +77,10 @@ export function getFormattedDate(activation_date: any): string {
   // return new Date().toISOString().slice(0, 19).replace('T', ' ')
   return DateTime.fromSQL(activation_date, { zone: 'Asia/Kolkata' }).toFormat('yyyy-MM-dd')
 }
+
+export function stringRepair3(tempText: string): string {
+  tempText = tempText.trim()
+  tempText = tempText.replace(/&#39;/g, "'")
+  tempText = tempText.replace(/&#34;/g, '"')
+  return tempText
+}

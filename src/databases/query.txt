@@ -140,3 +140,7 @@ CREATE TABLE streetgains.tbl_log_streetfolio_events (
 
 ALTER TABLE streetgains.tbl_services_sub
 ADD COLUMN discount_code VARCHAR(100) NULL AFTER discount_price;
+
+
+ALTER TABLE streetgains.tbl_services_sub
+ADD COLUMN access_price_monthly DECIMAL(10,2) DEFAULT 0 AFTER credits_price;

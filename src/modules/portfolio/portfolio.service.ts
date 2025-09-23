@@ -24,6 +24,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as ExcelJS from 'exceljs'
 import moment from 'moment'
+import { stringRepair3 } from 'helper'
 
 @Injectable()
 export class PortfolioService {
@@ -108,10 +109,7 @@ export class PortfolioService {
         return value.toLocaleString('en-IN')
       }
 
-      const planDetail = planData.length
-        ? `${formatIndianNumber(Math.round(planData[0].credits_price / planData[0].credits))} / Month`
-        : 'Free'
-
+      const planDetail = planData.length ? `${formatIndianNumber(Math.round(planData[0].access_price_monthly))} / Month` : 'Free'
       const methodology = await this.portfolioDetailReposistory.buildMethodologyHTML(service.methodology)
 
       const WEB_URL = process.env.WEB_URL || 'https://webapp.streetgains.in/'
@@ -253,17 +251,21 @@ export class PortfolioService {
       ]
 
       const segmentComposition = await this.portfolioDetailReposistory.buildSegmentCompositionNew(portfolioData)
+      const cleanedPortfolioMessages = portfolioMessages.map((pm) => ({
+        ...pm,
+        message: stringRepair3(pm.message),
+      }))
 
       const data = {
         cagrInfo: 'Currently showing 1-year CAGR',
         service: serviceDetails,
-        portfolioMessages,
+        portfolioMessages: cleanedPortfolioMessages,
         researchCredits,
         segmentComposition,
         holdingsDistribution,
         relatedServices,
         livePerformance: assetIdNameArray,
-        availableDurations: [],
+        availableDurations: { durations: [] },
       } as {
         cagrInfo: string
         service: any
@@ -355,9 +357,11 @@ export class PortfolioService {
         message: 'Plans retrieved successfully',
         result: {
           plans: formattedPlans,
-          // service_offers: serviceOffers, // separate service-wide offers
-          dos: ['Seamlessly place orders in 1 click', 'Get regular re-balance updates'],
-          donts: ['Easily start SIPs for disciplined investing'],
+          plan_benefits: [
+            'Seamlessly place orders in 1 click',
+            'Get regular re-balance updates',
+            'Easily start SIPs for disciplined investing',
+          ],
         },
       }
     } catch (err) {

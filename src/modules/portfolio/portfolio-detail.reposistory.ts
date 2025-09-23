@@ -100,14 +100,14 @@ export class PortfolioDetailReposistory {
       throw error
     }
   }
-
   async getCheapestPlan(serviceId: number) {
     try {
       return await this.dataSource.query(
-        `SELECT id, credits, credits_price, freepaid, stype 
-         FROM tbl_services_sub 
-         WHERE sid = ? AND device_type = 0 AND isdelete = 0 
-         ORDER BY credits_price ASC`,
+        `SELECT id, credits, credits_price, access_price_monthly, freepaid, stype 
+       FROM tbl_services_sub 
+       WHERE sid = ? AND device_type = 0 AND isdelete = 0 
+       ORDER BY access_price_monthly ASC 
+       LIMIT 1`,
         [serviceId]
       )
     } catch (error) {
