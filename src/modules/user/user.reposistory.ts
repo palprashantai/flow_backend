@@ -107,6 +107,7 @@ export async function getSubscriberSubscriptions(subscriberId: number, skip = 0,
         'sv.next_rebalance_date AS next_rebalance_date',
         'sv.rebalance_frequency AS rebalance_frequency',
         'sv.id AS serviceid',
+        'sub.created_on AS created_on',
         // ✅ Only rely on status for flags
         `CASE WHEN sub.status = 'Active' THEN TRUE ELSE FALSE END AS hasActiveSubscription`,
         `CASE WHEN sub.status = 'Expired' THEN TRUE ELSE FALSE END AS hasExpiredSubscription`,
@@ -195,6 +196,7 @@ export async function getPortfolioCount(serviceid: number) {
     .select('COUNT(id) AS rtot')
     .from('tbl_portfolio', 'p')
     .where('p.serviceid = :sid', { sid: serviceid })
+    .andWhere('p.isdelete = 0')
     .getRawOne()
 
   return { rtot: Number(result?.rtot) || 0 }
@@ -327,7 +329,7 @@ export async function getSubscriberOrders(userId: number, skip = 0, limit = 10) 
     .createQueryBuilder()
     .select([
       's.id AS id',
-      's.activation_date AS subscribed_on',
+      's.created_on AS subscribed_on',
       's.amount AS amount_paid',
       // 's.discount_amt AS discount_applied',
       's.stype AS subscription_type',

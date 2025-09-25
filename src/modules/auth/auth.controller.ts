@@ -48,6 +48,7 @@ export class AuthController {
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async otpVerification(@Body() dto: OtpVerificationDto) {
     try {
+      console.log('OTP Verification DTO:', dto) // Debug log to check incoming data
       const result = await this.authService.otpVerification(dto.mobileno, dto.deviceid, dto.otp, dto.fcmtoken)
 
       return {

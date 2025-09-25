@@ -293,7 +293,7 @@ export class UserService {
             next_rebalance: sub.next_rebalance_date,
             is_renew: daysLeft !== null && daysLeft <= 5,
             rebalance_frequency: sub.rebalance_frequency,
-            activation_date: sub.activation_date,
+            activation_date: sub.created_on,
             isActiveSubscription: Number(sub.hasActiveSubscription) === 1,
             isExpiredSubscription: Number(sub.hasExpiredSubscription) === 1,
           }
