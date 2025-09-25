@@ -144,3 +144,8 @@ ADD COLUMN discount_code VARCHAR(100) NULL AFTER discount_price;
 
 ALTER TABLE streetgains.tbl_services_sub
 ADD COLUMN access_price_monthly DECIMAL(10,2) DEFAULT 0 AFTER credits_price;
+
+
+ALTER TABLE streetgains.tbl_subscription
+ADD COLUMN invest_status TINYINT(1) NOT NULL DEFAULT 0
+COMMENT '0 = Successfully Subscribed | 1 = Successfully Invested | 2 = Rebalance Required | 3 = Rebalanced Successfully';

@@ -85,6 +85,8 @@ export class PortfolioService {
       const isExpired = activeSubscription.is_expired
       const isSubscribed = activeSubscription.is_subscribed
       const subscriptionId = activeSubscription.subscriptionid ?? ''
+      const investStatusCode = activeSubscription.invest_status?.code ?? null
+      const investStatusMessage = activeSubscription.invest_status?.message ?? ''
       // const availableDurations = await getAvailableDurationsForPortfolio(serviceId)
 
       const [
@@ -136,6 +138,8 @@ export class PortfolioService {
         minimum_investment: service.min_investment,
         is_subscribed: isSubscribed,
         is_expired: isExpired,
+        investStatusCode: investStatusCode,
+        investStatusMessage: investStatusMessage,
         subscriptionid: subscriptionId,
         subscription_count: service.subscription_count,
         is_free: service.is_free,
