@@ -28,19 +28,20 @@ export class PortfolioDetailReposistory {
       // Try to get an Active subscription
       const [activeRow] = await this.dataSource.query(
         `
-        SELECT 
-          t1.id AS id,
-          t1.subscriptionid,
-          t1.status
-        FROM tbl_subscription AS t1
-        WHERE 
-          t1.subscriberid = ? 
-          AND t1.serviceid = ? 
-          AND t1.isdelete = 0
-          AND t1.status = 'Active'
-        ORDER BY t1.id DESC 
-        LIMIT 1
-        `,
+      SELECT 
+        t1.id AS id,
+        t1.subscriptionid,
+        t1.status,
+        t1.invest_status
+      FROM tbl_subscription AS t1
+      WHERE 
+        t1.subscriberid = ? 
+        AND t1.serviceid = ? 
+        AND t1.isdelete = 0
+        AND t1.status = 'Active'
+      ORDER BY t1.id DESC 
+      LIMIT 1
+      `,
         [subscriberId, serviceId]
       )
 
@@ -49,25 +50,30 @@ export class PortfolioDetailReposistory {
           subscriptionid: activeRow.subscriptionid,
           is_subscribed: true,
           is_expired: false,
+          invest_status: {
+            code: activeRow.invest_status,
+            message: this.getInvestMessage(activeRow.invest_status),
+          },
         }
       }
 
       // If no Active subscription, check for Expired
       const [expiredRow] = await this.dataSource.query(
         `
-        SELECT 
-          t1.id AS id,
-          t1.subscriptionid,
-          t1.status
-        FROM tbl_subscription AS t1
-        WHERE 
-          t1.subscriberid = ? 
-          AND t1.serviceid = ? 
-          AND t1.isdelete = 0
-          AND t1.status = 'Expired'
-        ORDER BY t1.id DESC 
-        LIMIT 1
-        `,
+      SELECT 
+        t1.id AS id,
+        t1.subscriptionid,
+        t1.status,
+        t1.invest_status
+      FROM tbl_subscription AS t1
+      WHERE 
+        t1.subscriberid = ? 
+        AND t1.serviceid = ? 
+        AND t1.isdelete = 0
+        AND t1.status = 'Expired'
+      ORDER BY t1.id DESC 
+      LIMIT 1
+      `,
         [subscriberId, serviceId]
       )
 
@@ -76,6 +82,10 @@ export class PortfolioDetailReposistory {
           subscriptionid: expiredRow.subscriptionid,
           is_subscribed: true,
           is_expired: true,
+          invest_status: {
+            code: expiredRow.invest_status,
+            message: this.getInvestMessage(expiredRow.invest_status),
+          },
         }
       }
 
@@ -84,6 +94,21 @@ export class PortfolioDetailReposistory {
     } catch (error) {
       logger.error('Error fetching active subscription:', error)
       throw error
+    }
+  }
+
+  private getInvestMessage(status: number): string {
+    switch (status) {
+      case 0:
+        return 'Successfully Subscribed'
+      case 1:
+        return 'Successfully Invested'
+      case 2:
+        return 'Rebalance Required'
+      case 3:
+        return 'Rebalanced Successfully'
+      default:
+        return 'Unknown'
     }
   }
 
