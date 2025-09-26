@@ -15,11 +15,14 @@ export class WorkflowService {
   ) {}
 
   async assignLeadSubscriber(lead_source: string = '', langId: number = 0, product_app: number = 0) {
-    // Read URL from env
-    const url = this.configService.get<string>('WORKFLOW_URL_ASSGINTO')
+    // Base URL from env
+    const baseUrl = this.configService.get<string>('WORKFLOW_URL_ASSGINTO')
 
-    // Send POST request with parameters
-    const response = await firstValueFrom(this.httpService.post(url, { lead_source, langId, product_app }))
+    // Append params in path
+    const url = `${baseUrl}/${lead_source}/${langId}/${product_app}`
+
+    // Call the API (GET or POST depending on backend expectation)
+    const response = await firstValueFrom(this.httpService.get(url))
 
     return response.data
   }
