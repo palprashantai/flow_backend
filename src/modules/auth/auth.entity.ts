@@ -283,6 +283,9 @@ export class Subscriber {
 
   @Column({ type: 'tinyint', default: 1 })
   whatsapp_notifications: number
+
+  @Column({ type: 'tinyint', default: 1 })
+  isfolio:number
 }
 
 @Entity('tbl_log3')

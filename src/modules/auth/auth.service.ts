@@ -189,6 +189,7 @@ export class AuthService {
         utm_source: logEvent.utm_source || '',
         utm_campaign: logEvent.utm_campaign || '',
         utm_medium: logEvent.utm_medium || '',
+        isfolio: 1,
       })
 
       finalSubscriber = await this.subscriberRepo.save(newSubscriber)
