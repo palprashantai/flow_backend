@@ -6,12 +6,14 @@ import dayjs from 'dayjs'
 import { logger } from 'middlewares/logger.middleware'
 import { getUserBy } from 'modules/auth/auth.repository'
 import { fetchOfferByCode, fetchPlan } from 'modules/portfolio/portfolio.reposistory'
+import { WorkflowService } from 'modules/common/workflowphp.service'
 
 @Injectable()
 export class PaymentService {
   private readonly logger = logger
 
   private readonly razorpay: Razorpay
+  private readonly workflowService: WorkflowService
 
   constructor(private readonly dataSource: DataSource) {
     const key_id = process.env.RAZORPAY_KEY_ID
@@ -643,6 +645,7 @@ export class PaymentService {
 
         subscriptionRecordId = existingSubscription.id
         subscriptionCode = existingSubscription.subscriptionid
+        await this.workflowService.callSubscriptionWorkflow(subscriptionRecordId, 1, 'Edit') // new call
       } else {
         // Create new subscription
         expiryDate = dayjs(today).add(addDays, 'day').format('YYYY-MM-DD')
@@ -677,6 +680,8 @@ export class PaymentService {
           .execute()
 
         subscriptionRecordId = subInsert.identifiers[0]?.id || subInsert.raw?.insertId
+
+        await this.workflowService.callSubscriptionWorkflow(subscriptionRecordId, 1, 'Add')
         // await this.commonService.checkWorkflowSubscriptionWorkflow(subscriptionRecordId, 'Add')
       }
 

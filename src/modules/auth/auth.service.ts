@@ -235,14 +235,12 @@ export class AuthService {
           type: 0,
         })
         .execute()
+      ;(this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1), // default productApp = 0
+        this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1),
+        // await this.grpcClient.checkLeadWorkflow(finalSubscriber.id) // Using the same ID for testing
+        // await this.grpcClient.checkSubscriberWorkflow(finalSubscriber.id, 'insert')
 
-      await this.workflowService.callSubscriberWorkflow(subscriber.id, 'update')
-      await this.workflowService.callSubscriberInsertWorkflow(subscriber.id)
-
-      // await this.grpcClient.checkLeadWorkflow(finalSubscriber.id) // Using the same ID for testing
-      // await this.grpcClient.checkSubscriberWorkflow(finalSubscriber.id, 'insert')
-
-      this.logger.info(`New subscriber created: ${subscriberid}`)
+        this.logger.info(`New subscriber created: ${subscriberid}`))
     } else {
       // Existing subscriber flow
       if (!subscriber.email) {
