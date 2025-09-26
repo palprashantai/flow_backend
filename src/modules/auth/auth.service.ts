@@ -14,7 +14,6 @@ import { logger } from 'middlewares/logger.middleware'
 import { WorkflowService } from 'modules/common/workflowphp.service'
 // import { GrpcClientService } from 'grpc/grpc-client.service'
 
-
 @Injectable()
 export class AuthService {
   private readonly logger = logger
@@ -34,7 +33,7 @@ export class AuthService {
     private readonly workflowLeadCreationRepository: Repository<WorkflowLeadCreation>,
     @InjectRepository(UserInfo)
     private readonly userInfoRepository: Repository<UserInfo>,
-        private readonly workflowService: WorkflowService,
+    private readonly workflowService: WorkflowService
 
     // private readonly grpcClient: GrpcClientService
   ) {}
