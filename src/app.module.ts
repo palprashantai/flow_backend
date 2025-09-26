@@ -18,7 +18,7 @@ import { UserModule } from 'modules/user/user.module'
 import { PaymentModule } from 'modules/payment/payment.module'
 import { SmallcaseModule } from 'modules/smallcase/smallcase.module'
 import { ReferralModule } from 'modules/referral/referral.module'
-import { GrpcClientModule } from 'grpc/grpc-client.module'
+//import { GrpcClientModule } from 'grpc/grpc-client.module'
 
 @Module({
   imports: [
@@ -37,7 +37,7 @@ import { GrpcClientModule } from 'grpc/grpc-client.module'
       isGlobal: true,
     }),
     HttpModule,
-    GrpcClientModule,
+    //GrpcClientModule,
     AuthModule,
     UserModule,
     SettingModule,
