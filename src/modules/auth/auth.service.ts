@@ -11,7 +11,9 @@ import { OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreat
 import { RegisterDto, VerifyOtpDto } from './auth.dto'
 import { CommonService } from 'modules/common/common.service'
 import { logger } from 'middlewares/logger.middleware'
+import { WorkflowService } from 'modules/common/workflowphp.service'
 // import { GrpcClientService } from 'grpc/grpc-client.service'
+
 
 @Injectable()
 export class AuthService {
@@ -31,7 +33,9 @@ export class AuthService {
     @InjectRepository(WorkflowLeadCreation)
     private readonly workflowLeadCreationRepository: Repository<WorkflowLeadCreation>,
     @InjectRepository(UserInfo)
-    private readonly userInfoRepository: Repository<UserInfo>
+    private readonly userInfoRepository: Repository<UserInfo>,
+        private readonly workflowService: WorkflowService,
+
     // private readonly grpcClient: GrpcClientService
   ) {}
 
@@ -232,6 +236,9 @@ export class AuthService {
           type: 0,
         })
         .execute()
+
+      await this.workflowService.callSubscriberWorkflow(subscriber.id, 'update')
+      await this.workflowService.callSubscriberInsertWorkflow(subscriber.id)
 
       // await this.grpcClient.checkLeadWorkflow(finalSubscriber.id) // Using the same ID for testing
       // await this.grpcClient.checkSubscriberWorkflow(finalSubscriber.id, 'insert')
