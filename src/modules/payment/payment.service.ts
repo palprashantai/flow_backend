@@ -645,7 +645,8 @@ export class PaymentService {
 
         subscriptionRecordId = existingSubscription.id
         subscriptionCode = existingSubscription.subscriptionid
-        await this.workflowService.callSubscriptionWorkflow(subscriptionRecordId, 1, 'Edit') // new call
+        await this.workflowService.callSubscriptionInsertWorkflow(subscriptionRecordId, 1)
+        // new call
       } else {
         // Create new subscription
         expiryDate = dayjs(today).add(addDays, 'day').format('YYYY-MM-DD')
@@ -681,7 +682,7 @@ export class PaymentService {
 
         subscriptionRecordId = subInsert.identifiers[0]?.id || subInsert.raw?.insertId
 
-        await this.workflowService.callSubscriptionWorkflow(subscriptionRecordId, 1, 'Add')
+        await this.workflowService.callSubscriptionInsertWorkflow(subscriptionRecordId, 1)
         // await this.commonService.checkWorkflowSubscriptionWorkflow(subscriptionRecordId, 'Add')
       }
 

@@ -173,7 +173,7 @@ export class AuthService {
     if (!subscriber) {
       // New subscriber flow
       usertype = 1
-      const [subscriberid, assignedto] = await Promise.all([getNextSubscriberID(),this.workflowService.assignLeadSubscriber('MobileApp', 0, 0)])
+      const [subscriberid, assignedto] = await Promise.all([getNextSubscriberID(),this.workflowService.assignLeadSubscriber('MobileApp', 0, 1)])
 console.log(assignedto)
       const newSubscriber = this.subscriberRepo.create({
         subscriberid: subscriberid,

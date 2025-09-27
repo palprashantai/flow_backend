@@ -3,7 +3,14 @@ import { ConfigService } from '@nestjs/config'
 import { Injectable, Logger } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
 
-export type WorkflowType = 'subscription' | 'subscription_insert' | 'subscriber' | 'subscriber_insert' | 'lead_creation'
+export type WorkflowType =
+  | 'subscription'
+  | 'subscription_insert'
+  | 'subscriber'
+  | 'subscriber_insert'
+  | 'lead_creation'
+  | 'order_insert'
+  | 'order_update'
 
 @Injectable()
 export class WorkflowService {
@@ -11,26 +18,18 @@ export class WorkflowService {
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
-
-  async assignLeadSubscriber(lead_source: string = '', langId: number = 0, product_app: number = 0) {
-    // Base URL from env
-    const baseUrl = this.configService.get<string>('WORKFLOW_URL_ASSGINTO')
-
-    // Append params in path
-    const url = `${baseUrl}/${lead_source}/${langId}/${product_app}`
-
-    // Call the API (GET or POST depending on backend expectation)
-    const response = await firstValueFrom(this.httpService.get(url))
-
-    return response.data
-  }
 
   /**
    * Generic workflow caller
    */
-  async callWorkflow(workflowType: WorkflowType, id: number, productApp: 0 | 1 = 0, additionalData?: Record<string, any>): Promise<any> {
+  async callWorkflow(
+    workflowType: WorkflowType,
+    id: number,
+    productApp: 0 | 1 = 0,
+    additionalData?: Record<string, any>,
+  ): Promise<any> {
     try {
       const baseUrl = this.getWorkflowUrl(workflowType)
       const url = `${baseUrl}${id}/${productApp}`
@@ -49,7 +48,7 @@ export class WorkflowService {
         this.httpService.post(url, payload, {
           headers: { 'Content-Type': 'application/json' },
           timeout: 10000,
-        })
+        }),
       )
 
       this.logger.log(`${workflowType} workflow completed successfully`)
@@ -60,29 +59,21 @@ export class WorkflowService {
     }
   }
 
-  /** ================= Backward-compatible workflow methods ================= */
+  /** ================== Wrapper methods ================== */
 
-  async callSubscriberWorkflow(subscriberId: number, actionOrProductApp?: string | 0 | 1, actionIfProductApp?: string): Promise<any> {
-    let productApp: 0 | 1 = 0
-    let action: string = 'update'
-
-    if (typeof actionOrProductApp === 'number') {
-      productApp = actionOrProductApp
-      if (actionIfProductApp) action = actionIfProductApp
-    } else if (typeof actionOrProductApp === 'string') {
-      action = actionOrProductApp
-    }
-
-    return this.callWorkflow('subscriber', subscriberId, productApp, { action })
+  async callSubscriberWorkflow(subscriberId: number, productApp: 0 | 1 = 0) {
+    return this.callWorkflow('subscriber', subscriberId, productApp, { action: 'update' })
   }
 
-  async callSubscriberInsertWorkflow(subscriberId: number, productApp?: 0 | 1): Promise<any> {
-    return this.callWorkflow('subscriber_insert', subscriberId, productApp ?? 0, {
-      action: 'insert',
-    })
+  async callSubscriberInsertWorkflow(subscriberId: number, productApp: 0 | 1 = 0) {
+    return this.callWorkflow('subscriber_insert', subscriberId, productApp, { action: 'insert' })
   }
 
-  async callSubscriptionWorkflow(subscriptionId: number, actionOrProductApp?: string | 0 | 1, actionIfProductApp?: string): Promise<any> {
+  async callSubscriptionWorkflow(
+    subscriptionId: number,
+    actionOrProductApp?: string | 0 | 1,
+    actionIfProductApp?: string,
+  ): Promise<any> {
     let productApp: 0 | 1 = 0
     let action: string = 'update'
 
@@ -96,50 +87,54 @@ export class WorkflowService {
     return this.callWorkflow('subscription', subscriptionId, productApp, { action })
   }
 
-  async callSubscriptionInsertWorkflow(subscriptionId: number, productApp?: 0 | 1): Promise<any> {
-    return this.callWorkflow('subscription_insert', subscriptionId, productApp ?? 0, {
-      action: 'insert',
-    })
+  async assignLeadSubscriber(
+    lead_source: string = '',
+    langId: number = 0,
+    product_app: number = 0,
+  ) {
+    // Base URL from env
+    const baseUrl =
+      this.configService.get<string>('WORKFLOW_URL_ASSGINTO') ||
+      'http://localhost/newstreet/app/StreetApi/workflowSubscriberAssignTo/2Bcdeweikd'
+
+    // Construct full URL with path params
+    const url = `${baseUrl}/${lead_source}/${langId}/${product_app}`
+
+    // GET or POST depending on API design
+    const response = await firstValueFrom(this.httpService.get(url))
+
+    return response.data
   }
 
-  async callLeadCreationWorkflow(leadId: number, productApp?: 0 | 1): Promise<any> {
-    return this.callWorkflow('lead_creation', leadId, productApp ?? 0, {
-      action: 'create_lead',
-    })
+  async callSubscriptionInsertWorkflow(subscriptionId: number, productApp: 0 | 1 = 0) {
+    return this.callWorkflow('subscription_insert', subscriptionId, productApp, { action: 'insert' })
   }
 
-  /** ================= Batch workflow calls ================= */
-  async callMultipleWorkflows(
-    calls: Array<{
-      type: WorkflowType
-      id: number
-      productApp?: 0 | 1
-      data?: Record<string, any>
-    }>
-  ): Promise<any[]> {
-    const promises = calls.map((call) =>
-      this.callWorkflow(call.type, call.id, call.productApp ?? 0, call.data).catch((error) => ({
-        error: error.message,
-        type: call.type,
-        id: call.id,
-      }))
-    )
-    return Promise.all(promises)
+  async callLeadCreationWorkflow(leadId: number, productApp: 0 | 1 = 0) {
+    return this.callWorkflow('lead_creation', leadId, productApp, { action: 'create_lead' })
   }
 
-  /** ================= Retry logic ================= */
+  async callOrderInsertWorkflow(orderId: number, productApp: 0 | 1 = 0) {
+    return this.callWorkflow('order_insert', orderId, productApp, { action: 'insert' })
+  }
+
+  async callOrderUpdateWorkflow(orderId: number, productApp: 0 | 1 = 0) {
+    return this.callWorkflow('order_update', orderId, productApp, { action: 'update' })
+  }
+
+  /** ================== Retry logic ================== */
   async callWorkflowWithRetry(
     workflowType: WorkflowType,
     id: number,
-    productApp?: 0 | 1,
+    productApp: 0 | 1 = 0,
     maxRetries = 3,
-    additionalData?: Record<string, any>
+    additionalData?: Record<string, any>,
   ): Promise<any> {
     let lastError: any
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const result = await this.callWorkflow(workflowType, id, productApp ?? 0, {
+        const result = await this.callWorkflow(workflowType, id, productApp, {
           ...additionalData,
           attempt,
         })
@@ -151,7 +146,9 @@ export class WorkflowService {
         return result
       } catch (error) {
         lastError = error
-        this.logger.warn(`${workflowType} workflow attempt ${attempt}/${maxRetries} failed: ${error.message}`)
+        this.logger.warn(
+          `${workflowType} workflow attempt ${attempt}/${maxRetries} failed: ${error.message}`,
+        )
 
         if (attempt < maxRetries) {
           const delay = Math.pow(2, attempt) * 1000
@@ -161,17 +158,21 @@ export class WorkflowService {
       }
     }
 
-    throw new Error(`${workflowType} workflow failed after ${maxRetries} attempts: ${lastError.message}`)
+    throw new Error(
+      `${workflowType} workflow failed after ${maxRetries} attempts: ${lastError.message}`,
+    )
   }
 
-  /** ================= Get base URL ================= */
+  /** ================== URL resolver ================== */
   private getWorkflowUrl(workflowType: WorkflowType): string {
-    const urlMap = {
+    const urlMap: Record<WorkflowType, string> = {
       subscription: 'WORKFLOW_URL',
       subscription_insert: 'WORKFLOW_URL_INSERT',
       subscriber: 'WORKFLOW_URL_SUBSCRIBER',
       subscriber_insert: 'WORKFLOW_URL_SUBSCRIBER_INSERT',
       lead_creation: 'WORKFLOW_URL_LEAD_CREATION',
+      order_insert: 'WORKFLOW_URL_ORDERINSERT',
+      order_update: 'WORKFLOW_URL_ORDERUPDATE',
     }
 
     const envKey = urlMap[workflowType]
@@ -181,9 +182,8 @@ export class WorkflowService {
       throw new Error(`Workflow URL not configured for type: ${workflowType} (${envKey})`)
     }
 
-    // always end with a single slash
     if (!url.endsWith('/')) {
-      url = url + '/'
+      url += '/'
     }
 
     return url
