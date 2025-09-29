@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common'
 import { SettingService } from './setting.service'
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
-import { ComplianceItemDto, CreateAppEventLogDto, UpdateNotificationDto } from './setting.dto'
+import { ComplianceItemDto, CreateAppEventLogDto, CreateSubscriberEventDto, UpdateNotificationDto } from './setting.dto'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { getFaqList, streetfoliosInfo } from './setting.reposistory'
 
@@ -116,5 +116,24 @@ export class SettingController {
   @ApiResponse({ status: 500, description: 'Error retrieving data.' })
   async getFinePrint(@Query('slug') slug: string) {
     return this.settingService.getFinePrint(slug)
+  }
+
+  @Post('subscriberEventlog')
+  @ApiBearerAuth()
+  @Auth()
+  @ApiOperation({
+    summary: 'Log subscriber event',
+    description: 'Logs an event for the authenticated subscriber (like app activity or action).',
+  })
+  @ApiBody({ type: CreateSubscriberEventDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Event logged successfully',
+    schema: { example: { status: 'success' } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error or bad input' })
+  async logSubscriberEvent(@Body() dto: CreateSubscriberEventDto, @GetUserId('id') userId: number): Promise<{ status: string }> {
+    await this.settingService.createSubscriberEvent(dto, userId)
+    return { status: 'success' }
   }
 }

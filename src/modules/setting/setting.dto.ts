@@ -1,5 +1,5 @@
 // dto/create-ticket.dto.ts
-import { IsIn,  IsOptional, IsString } from 'class-validator'
+import { IsIn,  IsNotEmpty,  IsNumber,  IsOptional, IsString } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class CreateAppEventLogDto {
@@ -72,6 +72,20 @@ export class UpdateNotificationDto {
   @IsIn([0, 1])
   whatsapp_notifications?: number
 }
+
+
+
+export class CreateSubscriberEventDto {
+  @ApiProperty({ example: 5 })
+  @IsNotEmpty()
+  @IsNumber()
+  serviceid: number
+
+  @ApiProperty({ example: 'login', required: false })
+  @IsOptional()
+  event_type?: string
+}
+
 
 
 export class ComplianceItemDto {

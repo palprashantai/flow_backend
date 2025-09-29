@@ -1,12 +1,12 @@
 // ticket-category.service.ts
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { Repository } from 'typeorm'
-import { ComplianceItemDto, CreateAppEventLogDto, UpdateNotificationDto } from './setting.dto'
+import { ComplianceItemDto, CreateAppEventLogDto, CreateSubscriberEventDto, UpdateNotificationDto } from './setting.dto'
 
 import { InjectRepository } from '@nestjs/typeorm'
 import { AppEventLog } from './setting.entity'
 import { logger } from 'middlewares/logger.middleware'
-import { getCompanyInfo, getFinePrint, getSubscriberInfo, updateNotifications } from './setting.reposistory'
+import { getCompanyInfo, getFinePrint, getSubscriberInfo, insertSubscriberEvent, updateNotifications } from './setting.reposistory'
 import { getUserBy } from 'modules/auth/auth.repository'
 
 @Injectable()
@@ -198,5 +198,15 @@ export class SettingService {
       { name: 'User Agreement', value: 'https://streetgains.in/user-agreement' },
       { name: 'About', value: 'https://streetgains.in/about' },
     ]
+  }
+
+  async createSubscriberEvent(dto: CreateSubscriberEventDto, subscriberId: number): Promise<void> {
+    try {
+      const { serviceid, event_type } = dto
+      await insertSubscriberEvent(serviceid, subscriberId, event_type || null)
+    } catch (error) {
+      console.error('Error creating subscriber event:', error)
+      throw new InternalServerErrorException('Internal Server Error')
+    }
   }
 }

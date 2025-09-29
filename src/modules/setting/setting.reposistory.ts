@@ -117,15 +117,20 @@ export async function getFinePrint(slug: string) {
     [slug]
   )
 }
+
+export async function insertSubscriberEvent(serviceId: number, subscriberId: number, eventType: string | null) {
+  const ds = await dataSource
+  return ds.query(`INSERT INTO tbl_subscriber_events (serviceid, subscriberid, event_type) VALUES (?, ?, ?)`, [
+    serviceId,
+    subscriberId,
+    eventType,
+  ])
+}
+
 export async function updateNotifications(updateFields: any, userId: number) {
   const ds = await dataSource
 
-  await ds
-    .createQueryBuilder()
-    .update('tbl_subscriber')
-    .set(updateFields)
-    .where('id = :id', { id: userId })
-    .execute()
+  await ds.createQueryBuilder().update('tbl_subscriber').set(updateFields).where('id = :id', { id: userId }).execute()
 }
 
 export async function getFaqList(seoId: number) {
