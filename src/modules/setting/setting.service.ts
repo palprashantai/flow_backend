@@ -202,8 +202,11 @@ export class SettingService {
 
   async createSubscriberEvent(dto: CreateSubscriberEventDto, subscriberId: number): Promise<void> {
     try {
-      const { serviceid, event_type } = dto
-      await insertSubscriberEvent(serviceid, subscriberId, event_type || null)
+      const { serviceid, event_type, planid } = dto
+      console.log('createSubscriberEvent', dto, subscriberId)
+
+      // Use ?? to default only if planid is undefined
+      await insertSubscriberEvent(serviceid, subscriberId, event_type ?? null, planid ?? 0)
     } catch (error) {
       console.error('Error creating subscriber event:', error)
       throw new InternalServerErrorException('Internal Server Error')

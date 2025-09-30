@@ -133,6 +133,7 @@ export class SettingController {
   })
   @ApiResponse({ status: 400, description: 'Validation error or bad input' })
   async logSubscriberEvent(@Body() dto: CreateSubscriberEventDto, @GetUserId('id') userId: number): Promise<{ status: string }> {
+    console.log('logSubscriberEvent', dto, userId)
     await this.settingService.createSubscriberEvent(dto, userId)
     return { status: 'success' }
   }

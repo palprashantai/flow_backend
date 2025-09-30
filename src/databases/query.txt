@@ -149,3 +149,7 @@ ADD COLUMN access_price_monthly DECIMAL(10,2) DEFAULT 0 AFTER credits_price;
 ALTER TABLE streetgains.tbl_subscription
 ADD COLUMN invest_status TINYINT(1) NOT NULL DEFAULT 0
 COMMENT '0 = Successfully Subscribed | 1 = Successfully Invested | 2 = Rebalance Required | 3 = Rebalanced Successfully';
+
+
+ALTER TABLE streetgains.tbl_subscriber_events
+ADD COLUMN planid INT NOT NULL DEFAULT 0;

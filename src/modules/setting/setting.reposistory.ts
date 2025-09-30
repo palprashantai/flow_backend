@@ -118,14 +118,20 @@ export async function getFinePrint(slug: string) {
   )
 }
 
-export async function insertSubscriberEvent(serviceId: number, subscriberId: number, eventType: string | null) {
-  const ds = await dataSource
-  return ds.query(`INSERT INTO tbl_subscriber_events (serviceid, subscriberid, event_type) VALUES (?, ?, ?)`, [
-    serviceId,
-    subscriberId,
-    eventType,
-  ])
+export async function insertSubscriberEvent(
+  serviceId: number,
+  subscriberId: number,
+  eventType: string | null,
+  planid: number
+) {
+  const ds = await dataSource;
+  return ds.query(
+    `INSERT INTO tbl_subscriber_events (serviceid, subscriberid, event_type, planid) VALUES (?, ?, ?, ?)`,
+    [serviceId, subscriberId, eventType, planid]
+  );
 }
+
+
 
 export async function updateNotifications(updateFields: any, userId: number) {
   const ds = await dataSource
