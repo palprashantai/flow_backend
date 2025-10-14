@@ -161,3 +161,10 @@ ADD COLUMN discount_code VARCHAR(100) NULL AFTER existing_column_name,
 ADD COLUMN discount_price DECIMAL(10,2) DEFAULT 0 AFTER discount_code,
 ADD COLUMN credits_price DECIMAL(10,2) DEFAULT 0 AFTER discount_price,
 ADD COLUMN planid INT NULL AFTER credits_price;
+
+
+ALTER TABLE streetgains.tbl_services
+MODIFY COLUMN discount_price_monthly INT NOT NULL DEFAULT 0;
+
+ALTER TABLE streetgains.tbl_services_sub
+MODIFY COLUMN discount_price_monthly INT NOT NULL DEFAULT 0;
