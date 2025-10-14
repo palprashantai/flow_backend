@@ -118,26 +118,21 @@ export async function getFinePrint(slug: string) {
   )
 }
 
-export async function insertSubscriberEvent(
-  serviceId: number,
-  subscriberId: number,
-  eventType: string | null,
-  planid: number
-) {
-  const ds = await dataSource;
+export async function insertSubscriberEvent(serviceId: number, subscriberId: number, eventType: string | null, planid: number) {
+  const ds = await dataSource
 
-  const createdOn = new Date().toISOString().slice(0, 19).replace('T', ' '); // MySQL DATETIME format
+  // ✅ Generate current IST timestamp
+  const now = new Date()
+  const istTime = new Date(now.getTime() + 5.5 * 60 * 60 * 1000)
+  const createdOn = istTime.toISOString().slice(0, 19).replace('T', ' ') // MySQL DATETIME
 
+  // ✅ Insert record
   return ds.query(
-    `INSERT INTO tbl_subscriber_events (serviceid, subscriberid, event_type, planid, created_on) 
+    `INSERT INTO tbl_subscriber_events (serviceid, subscriberid, event_type, planid, created_on)
      VALUES (?, ?, ?, ?, ?)`,
     [serviceId, subscriberId, eventType, planid, createdOn]
-  );
+  )
 }
-
-
-
-
 
 export async function updateNotifications(updateFields: any, userId: number) {
   const ds = await dataSource

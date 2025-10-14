@@ -167,4 +167,4 @@ ALTER TABLE streetgains.tbl_services
 MODIFY COLUMN discount_price_monthly INT NOT NULL DEFAULT 0;
 
 ALTER TABLE streetgains.tbl_services_sub
-MODIFY COLUMN discount_price_monthly INT NOT NULL DEFAULT 0;
+MODIFY COLUMN    INT NOT NULL DEFAULT 0;
