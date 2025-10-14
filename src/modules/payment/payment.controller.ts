@@ -42,8 +42,8 @@ export class PaymentController {
   @ApiResponse({ status: 201, description: 'Subscription created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async createSubscription(@Body() dto: CreateSubscriptionDto) {
-    return this.paymentService.createSubscription(dto)
+  async createSubscription(@Body() dto: CreateSubscriptionDto, @GetUserId('id') userId?: number) {
+    return this.paymentService.createSubscription(dto,userId )
   }
 
   @Post('razorpay/plan')

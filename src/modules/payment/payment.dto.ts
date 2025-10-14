@@ -61,9 +61,10 @@ export class CreateSubscriptionDto {
   @IsNotEmpty()
   planid: string
 
-  @ApiProperty({ example: 101, description: 'ID of the tbl_services_sub record to update' })
+  @ApiProperty({ example: 2, description: 'ID of the tbl_services_sub record to update' })
   @IsNumber()
-  serviceSubId: number
+  @IsOptional()
+  serviceSubId?: number
 }
 
 //
@@ -139,20 +140,19 @@ export class CreatePortfolioOrderDto {
   use_balance?: boolean
 }
 
-
 export class CheckCouponDto {
   @ApiProperty({ description: 'Coupon code to apply', example: 'WELCOME10' })
   @IsNotEmpty()
   @IsString()
-  couponcode: string;
+  couponcode: string
 
   @ApiProperty({ description: 'Service ID', example: 5 })
   @IsNotEmpty()
   @IsNumber()
-  serviceid: number;
+  serviceid: number
 
   @ApiProperty({ description: 'Optional Plan ID', example: 'PLAN123', required: false })
   @IsOptional()
   @IsString()
-  planid?: string;
+  planid?: string
 }

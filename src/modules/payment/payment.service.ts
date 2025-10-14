@@ -116,7 +116,7 @@ export class PaymentService {
     }
   }
 
-  async createSubscription(dto: CreateSubscriptionDto) {
+  async createSubscription(dto: CreateSubscriptionDto, userId?: number) {
     this.logger.log('Creating Razorpay subscription', {
       planId: dto.planid,
     })
@@ -131,6 +131,21 @@ export class PaymentService {
         plan_id: dto.planid.trim(),
         total_count: 12,
       }
+
+      const serviceSubDetails = await this.dataSource
+        .createQueryBuilder()
+        .select('*')
+        .from('tbl_services_sub', 's')
+        .where('s.id = :id', { id: dto.serviceSubId })
+        .execute()
+
+      if (!serviceSubDetails || serviceSubDetails.length === 0) {
+        throw new Error(`Service sub with ID ${dto.serviceSubId} not found`)
+      }
+
+      const serviceSub = serviceSubDetails[0]
+
+      console.log(serviceSub)
 
       const subscription = await this.razorpay.subscriptions.create(subscriptionData)
 
@@ -157,16 +172,21 @@ export class PaymentService {
         .insert()
         .into('tbl_razorpay_order')
         .values({
-          serviceid: 0,
-          subscriberid: 0,
+          serviceid: serviceSub.sid,
+          subscriberid: userId,
           ordertype: 1, // 1 - Portfolio Based
           orderid: subscription.id, // Razorpay subscription ID
           transactionid: null, // will be filled after payment
-          status: 0, // 0 = pending
+          status: 0,
+          discount_code: serviceSub.discount_code || null,
+          discount_price: serviceSub.discount_price || 0,
+          credits_price: serviceSub.credits_price || 0,
+          planid: dto.serviceSubId || null,
           updated_on: new Date(),
         })
         .execute()
 
+        
       // ✅ Insert into tbl_razorpay_order
 
       return {

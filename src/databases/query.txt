@@ -153,3 +153,11 @@ COMMENT '0 = Successfully Subscribed | 1 = Successfully Invested | 2 = Rebalance
 
 ALTER TABLE streetgains.tbl_subscriber_events
 ADD COLUMN planid INT NOT NULL DEFAULT 0;
+
+
+
+ALTER TABLE tbl_razorpay_order
+ADD COLUMN discount_code VARCHAR(100) NULL AFTER existing_column_name,
+ADD COLUMN discount_price DECIMAL(10,2) DEFAULT 0 AFTER discount_code,
+ADD COLUMN credits_price DECIMAL(10,2) DEFAULT 0 AFTER discount_price,
+ADD COLUMN planid INT NULL AFTER credits_price;

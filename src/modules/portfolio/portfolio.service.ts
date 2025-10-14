@@ -135,6 +135,7 @@ export class PortfolioService {
         last_rebalance_date: service.last_rebalance_date,
         next_rebalance_date: service.next_rebalance_date,
         plan_detail: planDetail, // planId removed
+        discount_price_monthly: service.discount_price_monthly,
         minimum_investment: service.min_investment,
         is_subscribed: isSubscribed,
         is_expired: isExpired,
@@ -157,6 +158,7 @@ export class PortfolioService {
           planId: number
           discount_code: string | null
           discount_price: number | null
+          discount_price_monthly: number | null
         }[]
       ).map((plan) => ({
         id: plan.id,
@@ -166,6 +168,7 @@ export class PortfolioService {
         freepaid: plan.freepaid ? 'Free' : 'Paid',
         discount_code: plan.discount_code ?? null,
         discount_price: plan.discount_price ? `₹${Number(plan.discount_price).toFixed(2)}` : null,
+        discount_price_monthly: plan.discount_price_monthly ? `₹${Number(plan.discount_price_monthly).toFixed(2)}` : 0,
       }))
 
       function lightenColor(hex: string, factor: number) {
@@ -229,6 +232,7 @@ export class PortfolioService {
             peopleInvestedLast30Days: row.subscription_count ? Number(row.subscription_count) : 0,
             lastUpdated: row.last_rebalance_date,
             getAccessPrice: row.access_price,
+            discount_price_monthly: row.discount_price_monthly,
             isFree: Boolean(row.is_free),
             subscriptionActive: subscriptionStatus.is_subscribed && !subscriptionStatus.is_expired,
             subscriptionExpired: subscriptionStatus.is_subscribed && subscriptionStatus.is_expired,
@@ -352,6 +356,7 @@ export class PortfolioService {
           price_per_month: Math.floor(price / months),
           discount_price: discountPrice,
           discount_price_per_month: discountPrice > 0 ? Math.floor(discountPrice / months) : 0,
+          discount_price_monthly: p.discount_price_monthly || 0,
           offers: [], // ✅ empty since planOffers removed
         }
       })

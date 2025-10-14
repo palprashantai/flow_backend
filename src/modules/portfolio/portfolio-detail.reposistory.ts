@@ -151,12 +151,13 @@ export class PortfolioDetailReposistory {
       planId: number
       discount_code: string | null
       discount_price: number | null
+      discount_price_monthly: number | null
     }[]
   > {
     try {
       return await this.dataSource.query(
         `SELECT id, credits, credits_price, freepaid, stype, productid AS planId,
-              discount_code, discount_price
+              discount_code, discount_price, discount_price_monthly
        FROM tbl_services_sub
        WHERE sid = ? AND device_type = 0 AND isdelete = 0`,
         [serviceId]
