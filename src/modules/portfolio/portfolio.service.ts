@@ -112,6 +112,8 @@ export class PortfolioService {
       }
 
       const planDetail = planData.length ? `${formatIndianNumber(Math.round(planData[0].access_price_monthly))} / Month` : 'Free'
+
+      const discountPlanDetail = planData.length ? `${formatIndianNumber(Math.round(planData[0].discount_price_monthly))} / Month` : 'Free'
       const methodology = await this.portfolioDetailReposistory.buildMethodologyHTML(service.methodology)
 
       const WEB_URL = process.env.WEB_URL || 'https://webapp.streetgains.in/'
@@ -134,7 +136,8 @@ export class PortfolioService {
         launch_date: service.launch_date,
         last_rebalance_date: service.last_rebalance_date,
         next_rebalance_date: service.next_rebalance_date,
-        plan_detail: planDetail, // planId removed
+        plan_detail: planDetail,
+        discount_plan_detail: discountPlanDetail,
         discount_price_monthly: service.discount_price_monthly,
         minimum_investment: service.min_investment,
         is_subscribed: isSubscribed,
@@ -298,6 +301,9 @@ export class PortfolioService {
       throw new InternalServerErrorException(error.message || 'Internal Server Error')
     }
   }
+
+
+  
 
   async getPortfolioHistoryMerged(serviceId: number, options: { page?: number; limit?: number; duration?: string; assetId?: number }) {
     let { page = 1, limit = 10, duration, assetId } = options

@@ -183,6 +183,92 @@ export class PortfolioDetailReposistory {
     }
   }
 
+  async getPortfolioRebalance(userId: number, serviceid: number) {
+    try {
+      if (!serviceid) {
+        return { success: false, message: 'Please Enter Service ID' }
+      }
+
+      // // 1️⃣ Fetch subscriber
+      // const [subscriber] = await this.dataSource.query(
+      //   `SELECT id, fullname, mobileno, email, subscriberid, language, address, state
+      //  FROM tbl_subscriber
+      //  WHERE isdelete = 0 AND id = ?`,
+      //   [userId]
+      // )
+
+      // if (!subscriber) {
+      //   return { success: false, message: 'Subscriber not found' }
+      // }
+
+      // 2️⃣ Check active subscription
+      const [subscription] = await this.dataSource.query(
+        `SELECT id, broker FROM tbl_subscription
+       WHERE isdelete = 0 AND subscriberid = ? AND serviceid = ? AND status = 'Active'`,
+        [userId, serviceid]
+      )
+
+      if (!subscription) {
+        return { success: false, message: 'No Active Subscription Found' }
+      }
+
+      // 3️⃣ Fetch latest portfolio and subscriber holdings
+      const [latestPortfolio, subscriberHoldings] = await Promise.all([
+        this.dataSource.query(`SELECT * FROM tbl_portfolio WHERE serviceid = ?`, [serviceid]),
+        this.dataSource.query(`SELECT * FROM tbl_subscriber_portfolio WHERE subscriberid = ? AND serviceid = ?`, [userId, serviceid]),
+      ])
+
+      // 4️⃣ Map subscriber holdings
+      const holdingsMap = new Map()
+      for (const h of subscriberHoldings) {
+        holdingsMap.set(String(h.instrument_token).trim(), h)
+      }
+
+      const securities = []
+      for (const row of latestPortfolio) {
+        const token = String(row.instrument_token).trim()
+        const holding = holdingsMap.get(token)
+
+        if (row.isdelete === 1 && holding) {
+          securities.push({
+            ticker: row.stocks,
+            weightage: parseFloat(row.weightage),
+            quantity: parseInt(holding.quantity),
+            price: parseFloat(row.price),
+            type: 'SELL',
+          })
+        } else if (row.isdelete === 0 && !holding) {
+          securities.push({
+            ticker: row.stocks,
+            weightage: parseFloat(row.weightage),
+            quantity: parseInt(row.quantity),
+            price: parseFloat(row.price),
+            instrument_token: token,
+            type: 'BUY',
+          })
+        }
+      }
+
+      return {
+        success: true,
+        message: 'Rebalance instructions generated',
+        result: {
+          securities,
+          broker: subscription.broker,
+          dos: ['Rebalance your portfolio as per updated strategy', 'Sell exited stocks to avoid underperformance'],
+          donts: ['Avoid skipping rebalancing – it impacts performance'],
+        },
+      }
+    } catch (error) {
+      console.error('Error in getPortfolioRebalance:', error)
+      return {
+        success: false,
+        message: 'Internal Server Error',
+        error: error?.message || error,
+      }
+    }
+  }
+
   async getRebalanceTimeline(serviceId: number) {
     try {
       const rebquery = `

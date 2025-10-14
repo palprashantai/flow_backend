@@ -1,16 +1,31 @@
-import { BadRequestException, Controller, Get, InternalServerErrorException, Param, ParseIntPipe, Post, Query, Res } from '@nestjs/common'
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Res,
+} from '@nestjs/common'
 import { PortfolioService } from './portfolio.service'
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
-import { FilterPortfolioDto } from './portfolio.dto'
+import { FilterPortfolioDto, GetPortfolioRebalanceDto } from './portfolio.dto'
 import { getAvailableDurationsForPortfolio } from './portfolio.reposistory'
 import { Response } from 'express'
 import * as fs from 'fs'
+import { PortfolioDetailReposistory } from './portfolio-detail.reposistory'
 
 @ApiTags('Portfolio')
 @Controller('appApi/portfolio')
 export class PortfolioController {
-  constructor(private readonly portfolioService: PortfolioService) {}
+  constructor(
+    private readonly portfolioService: PortfolioService,
+    private readonly portfolioDetailReposistory: PortfolioDetailReposistory
+  ) {}
 
   @Get('home')
   @ApiBearerAuth()
@@ -176,6 +191,19 @@ export class PortfolioController {
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async getPlans(@Query('service_id', ParseIntPipe) service_id: number) {
     return this.portfolioService.getPortfolioPlans(service_id)
+  }
+
+
+  
+  @Post('rebalance')
+  @ApiBearerAuth()
+  @Auth()
+  @ApiOperation({ summary: 'Get portfolio rebalance instructions' })
+  @ApiResponse({ status: 200, description: 'Rebalance instructions fetched successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or missing parameters' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async getPortfolioRebalance(@GetUserId('id') userId: number, @Body() dto: GetPortfolioRebalanceDto) {
+    return this.portfolioDetailReposistory.getPortfolioRebalance(userId, dto.serviceid)
   }
 
   @Post('portfolio/stocks')

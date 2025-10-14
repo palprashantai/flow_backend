@@ -1,5 +1,5 @@
 // dto/create-ticket.dto.ts
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform, Type } from 'class-transformer'
 
@@ -128,4 +128,13 @@ export class FilterPortfolioDto {
   @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   @Type(() => Number)
   investmentStrategy?: number[]
+}
+
+export class GetPortfolioRebalanceDto {
+  @ApiPropertyOptional({
+    description: 'Service id  for the rebalance',
+    example: 21,
+  })
+  @IsNotEmpty({ message: 'Service ID is required' })
+  serviceid: number
 }
