@@ -125,11 +125,17 @@ export async function insertSubscriberEvent(
   planid: number
 ) {
   const ds = await dataSource;
+
+  const createdOn = new Date().toISOString().slice(0, 19).replace('T', ' '); // MySQL DATETIME format
+
   return ds.query(
-    `INSERT INTO tbl_subscriber_events (serviceid, subscriberid, event_type, planid) VALUES (?, ?, ?, ?)`,
-    [serviceId, subscriberId, eventType, planid]
+    `INSERT INTO tbl_subscriber_events (serviceid, subscriberid, event_type, planid, created_on) 
+     VALUES (?, ?, ?, ?, ?)`,
+    [serviceId, subscriberId, eventType, planid, createdOn]
   );
 }
+
+
 
 
 
