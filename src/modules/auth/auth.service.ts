@@ -109,6 +109,10 @@ export class AuthService {
       await insertOtp(sanitizedMobile, otp, now)
 
       const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS ZrPVJ2XWTij`
+
+      // const message = `Welcome to Streetfolio - Model Portfolios by Streetgains\nYour login OTP is ${otp}\n\nZrPVJ2XWTij -STREETGAINS`
+      console.log(message)
+
       this.logger.debug(`Sending SMS to ${sanitizedMobile}: ${message}`)
       await this.commonService.sendSms(sanitizedMobile, message)
     }
@@ -173,8 +177,11 @@ export class AuthService {
     if (!subscriber) {
       // New subscriber flow
       usertype = 1
-      const [subscriberid, assignedto] = await Promise.all([getNextSubscriberID(),this.workflowService.assignLeadSubscriber('MobileApp', 0, 1)])
-console.log(assignedto)
+      const [subscriberid, assignedto] = await Promise.all([
+        getNextSubscriberID(),
+        this.workflowService.assignLeadSubscriber('MobileApp', 0, 1),
+      ])
+      console.log(assignedto)
       const newSubscriber = this.subscriberRepo.create({
         subscriberid: subscriberid,
         assignedto,
@@ -490,6 +497,10 @@ console.log(assignedto)
     await insertOtp(subscriber.mobileno, otp, now)
 
     const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yqoW/F5XuOH`
+
+    // const message = `Thanks for choosing Streetfolios. Your OTP to sign the terms of service is : ${otp} -STREETGAINS`
+          console.log(message)
+
     this.logger.debug(`Sending SMS to ${subscriber.mobileno}: ${message}`)
     await this.commonService.sendSms(subscriber.mobileno, message)
   }
