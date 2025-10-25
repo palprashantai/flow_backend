@@ -157,14 +157,14 @@ export class PaymentService {
       })
 
       // ✅ Update `productid` in tbl_services_sub
-      if (dto.serviceSubId) {
-        await this.dataSource
-          .createQueryBuilder()
-          .update('tbl_services_sub')
-          .set({ productid: dto.planid.trim() })
-          .where('id = :id', { id: dto.serviceSubId })
-          .execute()
-      }
+      // if (dto.serviceSubId) {
+      //   await this.dataSource
+      //     .createQueryBuilder()
+      //     .update('tbl_services_sub')
+      //     .set({ productid: dto.planid.trim() })
+      //     .where('id = :id', { id: dto.serviceSubId })
+      //     .execute()
+      // }
 
       // ✅ Insert into tbl_razorpay_order
       await this.dataSource
