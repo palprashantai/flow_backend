@@ -2,18 +2,18 @@ import { HttpException, HttpStatus, Injectable, BadRequestException, NotFoundExc
 import { CheckCouponDto, CreatePlanDto, CreatePortfolioOrderDto, CreateSubscriptionDto } from './payment.dto'
 import Razorpay from 'razorpay'
 import { DataSource } from 'typeorm'
-import dayjs from 'dayjs'
+// import dayjs from 'dayjs'
 import { logger } from 'middlewares/logger.middleware'
-import { getUserBy } from 'modules/auth/auth.repository'
+// import { getUserBy } from 'modules/auth/auth.repository'
 import { fetchOfferByCode, fetchPlan } from 'modules/portfolio/portfolio.reposistory'
-import { WorkflowService } from 'modules/common/workflowphp.service'
+// import { WorkflowService } from 'modules/common/workflowphp.service'
 
 @Injectable()
 export class PaymentService {
   private readonly logger = logger
 
   private readonly razorpay: Razorpay
-  private readonly workflowService: WorkflowService
+  // private readonly workflowService: WorkflowService
 
   constructor(private readonly dataSource: DataSource) {
     const key_id = process.env.RAZORPAY_KEY_ID
@@ -186,7 +186,6 @@ export class PaymentService {
         })
         .execute()
 
-        
       // ✅ Insert into tbl_razorpay_order
 
       return {
@@ -463,346 +462,346 @@ export class PaymentService {
   }
 
   async paymentSuccessPortfolio(dto: CreatePortfolioOrderDto, userId: number) {
-    const { transactionId, razorpaySubscriptionId, serviceId, serviceSubId, couponcode, use_balance } = dto
-    const today = dayjs().format('YYYY-MM-DD HH:mm:ss')
+    // const { transactionId, razorpaySubscriptionId, serviceId, serviceSubId, couponcode, use_balance } = dto
+    // const today = dayjs().format('YYYY-MM-DD HH:mm:ss')
 
     try {
-      const user = await getUserBy(
-        { id: userId },
-        ['id', 'fullname', 'mobileno', 'email', 'assignedto'] // optional selected fields
-      )
+      // const user = await getUserBy(
+      //   { id: userId },
+      //   ['id', 'fullname', 'mobileno', 'email', 'assignedto'] // optional selected fields
+      // )
 
-      if (!user) throw new NotFoundException('No subscriber found')
+      // if (!user) throw new NotFoundException('No subscriber found')
 
-      // 2. Fetch plan data
-      const planData = await this.dataSource
-        .createQueryBuilder()
-        .select('*')
-        .from('tbl_services_sub', 'ss')
-        .where('ss.isdelete = 0 AND ss.id = :serviceSubId', { serviceSubId })
-        .getRawOne()
-      if (!planData) throw new BadRequestException('Plan not found')
+      // // 2. Fetch plan data
+      // const planData = await this.dataSource
+      //   .createQueryBuilder()
+      //   .select('*')
+      //   .from('tbl_services_sub', 'ss')
+      //   .where('ss.isdelete = 0 AND ss.id = :serviceSubId', { serviceSubId })
+      //   .getRawOne()
+      // if (!planData) throw new BadRequestException('Plan not found')
 
-      const amount = Number(planData.credits_price)
-      if (!userId || !amount || !transactionId) throw new BadRequestException('Required parameters are missing')
+      // const amount = Number(planData.credits_price)
+      // if (!userId || !amount || !transactionId) throw new BadRequestException('Required parameters are missing')
 
-      // 3. Handle coupon/referral logic
-      let offerId = 0
-      let offerType = '1'
-      let cartReferBy = 0
+      // // 3. Handle coupon/referral logic
+      // let offerId = 0
+      // let offerType = '1'
+      // let cartReferBy = 0
 
-      if (couponcode) {
-        const offerData = await this.dataSource
-          .createQueryBuilder()
-          .select('*')
-          .from('tbl_offers', 'o')
-          .where('o.offercode = :couponcode', { couponcode })
-          .getRawMany()
+      // if (couponcode) {
+      //   const offerData = await this.dataSource
+      //     .createQueryBuilder()
+      //     .select('*')
+      //     .from('tbl_offers', 'o')
+      //     .where('o.offercode = :couponcode', { couponcode })
+      //     .getRawMany()
 
-        if (offerData.length) {
-          offerId = offerData[0].id
-          offerType = '0'
-        } else {
-          const cartRefData = await this.dataSource
-            .createQueryBuilder()
-            .select('*')
-            .from('tbl_cart_referral', 'cr')
-            .where('cr.sub_id = :userId AND cr.code = :couponcode', { userId, couponcode })
-            .getRawMany()
+      //   if (offerData.length) {
+      //     offerId = offerData[0].id
+      //     offerType = '0'
+      //   } else {
+      //     const cartRefData = await this.dataSource
+      //       .createQueryBuilder()
+      //       .select('*')
+      //       .from('tbl_cart_referral', 'cr')
+      //       .where('cr.sub_id = :userId AND cr.code = :couponcode', { userId, couponcode })
+      //       .getRawMany()
 
-          if (cartRefData.length) {
-            offerType = '2'
-            cartReferBy = cartRefData[0].updated_by || cartRefData[0].created_by
+      //     if (cartRefData.length) {
+      //       offerType = '2'
+      //       cartReferBy = cartRefData[0].updated_by || cartRefData[0].created_by
 
-            await this.dataSource
-              .createQueryBuilder()
-              .delete()
-              .from('tbl_cart_referral')
-              .where('id = :id', { id: cartRefData[0].id })
-              .execute()
-          }
-        }
-      }
-      const invoiceAmount = planData.discount_price || amount
-      // 4. Generate invoice
-      const invoiceArr = await this.getOrderInvoice(invoiceAmount)
-      const orderId = invoiceArr.invoiceno
-      const taxAmount = 0
+      //       await this.dataSource
+      //         .createQueryBuilder()
+      //         .delete()
+      //         .from('tbl_cart_referral')
+      //         .where('id = :id', { id: cartRefData[0].id })
+      //         .execute()
+      //     }
+      //   }
+      // }
+      // const invoiceAmount = planData.discount_price || amount
+      // // 4. Generate invoice
+      // const invoiceArr = await this.getOrderInvoice(invoiceAmount)
+      // const orderId = invoiceArr.invoiceno
+      // const taxAmount = 0
 
-      console.log(planData.discount_price, planData.discount_code)
-      // 5. Insert/update order
-      const existingOrder = await this.dataSource
-        .createQueryBuilder()
-        .select('o.id', 'id')
-        .from('tbl_order', 'o')
-        .where('o.transactionid = :transactionId AND o.isdelete = 0', { transactionId })
-        .getRawOne()
+      // console.log(planData.discount_price, planData.discount_code)
+      // // 5. Insert/update order
+      // const existingOrder = await this.dataSource
+      //   .createQueryBuilder()
+      //   .select('o.id', 'id')
+      //   .from('tbl_order', 'o')
+      //   .where('o.transactionid = :transactionId AND o.isdelete = 0', { transactionId })
+      //   .getRawOne()
 
-      let orderInsertedId: number
-      if (existingOrder) {
-        await this.dataSource
-          .createQueryBuilder()
-          .update('tbl_order')
-          .set({
-            subscriberid: userId,
-            research_fee: amount,
-            discount_amt: planData.discount_price,
-            tax_amt: taxAmount,
-            amount_payable: planData.discount_price || amount,
-            actual_amount: amount,
-            offerid: offerId,
-            offercode: planData.discount_code,
-            offer_type: offerType,
-            payment_mode: 'Razorpay',
-            payment_date: today,
-            payment_source: 'MobileApp',
-            sales_manager: user.assignedto,
-            order_approval: 1,
-            cart_refer_by: cartReferBy,
-            product_app: 1,
-          })
-          .where('id = :id', { id: existingOrder.id })
-          .execute()
-        orderInsertedId = existingOrder.id
-      } else {
-        const orderResult = await this.dataSource
-          .createQueryBuilder()
-          .insert()
-          .into('tbl_order')
-          .values({
-            orderid: orderId,
-            subscriberid: userId,
-            research_fee: amount,
-            discount_amt: planData.discount_price,
-            tax_amt: taxAmount,
-            amount_payable: planData.discount_price || amount,
-            actual_amount: amount,
-            offerid: offerId,
-            offercode: planData.discount_code,
-            offer_type: offerType,
-            transactionid: transactionId,
-            orderinvoiceyear: invoiceArr.invoiceyear,
-            orderinvno: invoiceArr.invno,
-            payment_mode: 'Razorpay',
-            payment_date: today,
-            payment_source: 'MobileApp',
-            sales_manager: user.assignedto,
-            order_approval: 1,
-            cart_refer_by: cartReferBy,
-            product_app: 1,
-          })
-          .execute()
-        orderInsertedId = orderResult.raw?.insertId
-      }
+      // let orderInsertedId: number
+      // if (existingOrder) {
+      //   await this.dataSource
+      //     .createQueryBuilder()
+      //     .update('tbl_order')
+      //     .set({
+      //       subscriberid: userId,
+      //       research_fee: amount,
+      //       discount_amt: planData.discount_price,
+      //       tax_amt: taxAmount,
+      //       amount_payable: planData.discount_price || amount,
+      //       actual_amount: amount,
+      //       offerid: offerId,
+      //       offercode: planData.discount_code,
+      //       offer_type: offerType,
+      //       payment_mode: 'Razorpay',
+      //       payment_date: today,
+      //       payment_source: 'MobileApp',
+      //       sales_manager: user.assignedto,
+      //       order_approval: 1,
+      //       cart_refer_by: cartReferBy,
+      //       product_app: 1,
+      //     })
+      //     .where('id = :id', { id: existingOrder.id })
+      //     .execute()
+      //   orderInsertedId = existingOrder.id
+      // } else {
+      //   const orderResult = await this.dataSource
+      //     .createQueryBuilder()
+      //     .insert()
+      //     .into('tbl_order')
+      //     .values({
+      //       orderid: orderId,
+      //       subscriberid: userId,
+      //       research_fee: amount,
+      //       discount_amt: planData.discount_price,
+      //       tax_amt: taxAmount,
+      //       amount_payable: planData.discount_price || amount,
+      //       actual_amount: amount,
+      //       offerid: offerId,
+      //       offercode: planData.discount_code,
+      //       offer_type: offerType,
+      //       transactionid: transactionId,
+      //       orderinvoiceyear: invoiceArr.invoiceyear,
+      //       orderinvno: invoiceArr.invno,
+      //       payment_mode: 'Razorpay',
+      //       payment_date: today,
+      //       payment_source: 'MobileApp',
+      //       sales_manager: user.assignedto,
+      //       order_approval: 1,
+      //       cart_refer_by: cartReferBy,
+      //       product_app: 1,
+      //     })
+      //     .execute()
+      //   orderInsertedId = orderResult.raw?.insertId
+      // }
 
-      // 6. Insert/update order_sub
-      let orderSubId: number
-      const existingOrderSub = await this.dataSource
-        .createQueryBuilder()
-        .select('id')
-        .from('tbl_order_sub', 'os')
-        .where('os.order_id = :orderInsertedId AND os.serviceid = :serviceId', { orderInsertedId, serviceId })
-        .getRawOne()
+      // // 6. Insert/update order_sub
+      // let orderSubId: number
+      // const existingOrderSub = await this.dataSource
+      //   .createQueryBuilder()
+      //   .select('id')
+      //   .from('tbl_order_sub', 'os')
+      //   .where('os.order_id = :orderInsertedId AND os.serviceid = :serviceId', { orderInsertedId, serviceId })
+      //   .getRawOne()
 
-      if (existingOrderSub) {
-        await this.dataSource
-          .createQueryBuilder()
-          .update('tbl_order_sub')
-          .set({
-            service_subid: serviceSubId,
-            subscriberid: userId,
-            trade: planData.credits,
-            price: planData.discount_price || amount,
-          })
-          .where('id = :id', { id: existingOrderSub.id })
-          .execute()
-        orderSubId = existingOrderSub.id
-      } else {
-        const insertOrderSub = await this.dataSource
-          .createQueryBuilder()
-          .insert()
-          .into('tbl_order_sub')
-          .values({
-            order_id: orderInsertedId,
-            serviceid: serviceId,
-            service_subid: serviceSubId,
-            subscriberid: userId,
-            trade: planData.credits,
-            price: planData.discount_price || amount,
-          })
-          .execute()
-        orderSubId = insertOrderSub.raw?.insertId
-      }
+      // if (existingOrderSub) {
+      //   await this.dataSource
+      //     .createQueryBuilder()
+      //     .update('tbl_order_sub')
+      //     .set({
+      //       service_subid: serviceSubId,
+      //       subscriberid: userId,
+      //       trade: planData.credits,
+      //       price: planData.discount_price || amount,
+      //     })
+      //     .where('id = :id', { id: existingOrderSub.id })
+      //     .execute()
+      //   orderSubId = existingOrderSub.id
+      // } else {
+      //   const insertOrderSub = await this.dataSource
+      //     .createQueryBuilder()
+      //     .insert()
+      //     .into('tbl_order_sub')
+      //     .values({
+      //       order_id: orderInsertedId,
+      //       serviceid: serviceId,
+      //       service_subid: serviceSubId,
+      //       subscriberid: userId,
+      //       trade: planData.credits,
+      //       price: planData.discount_price || amount,
+      //     })
+      //     .execute()
+      //   orderSubId = insertOrderSub.raw?.insertId
+      // }
 
-      // 7. Handle subscription (extend or create new)
-      const existingSubscription = await this.dataSource
-        .createQueryBuilder()
-        .select('*')
-        .from('tbl_subscription', 'sub')
-        .where('sub.subscriberid = :userId AND sub.serviceid = :serviceId', { userId, serviceId })
-        .orderBy('sub.id', 'DESC')
-        .getRawOne()
+      // // 7. Handle subscription (extend or create new)
+      // const existingSubscription = await this.dataSource
+      //   .createQueryBuilder()
+      //   .select('*')
+      //   .from('tbl_subscription', 'sub')
+      //   .where('sub.subscriberid = :userId AND sub.serviceid = :serviceId', { userId, serviceId })
+      //   .orderBy('sub.id', 'DESC')
+      //   .getRawOne()
 
-      const addDays = Number(planData.credits) * 30
-      let subscriptionRecordId: number
-      let subscriptionCode: string
-      let expiryDate: string
-      const activationDate = dayjs(today).add(1, 'day').format('YYYY-MM-DD')
+      // const addDays = Number(planData.credits) * 30
+      // let subscriptionRecordId: number
+      // let subscriptionCode: string
+      // let expiryDate: string
+      // const activationDate = dayjs(today).add(1, 'day').format('YYYY-MM-DD')
 
-      if (existingSubscription) {
-        // Extend existing subscription
-        const currentExpiry = existingSubscription.expiry_date ? dayjs(existingSubscription.expiry_date) : dayjs(today)
-        expiryDate = currentExpiry.isAfter(dayjs(today))
-          ? currentExpiry.add(addDays, 'day').format('YYYY-MM-DD')
-          : dayjs(today).add(addDays, 'day').format('YYYY-MM-DD')
+      // if (existingSubscription) {
+      //   // Extend existing subscription
+      //   const currentExpiry = existingSubscription.expiry_date ? dayjs(existingSubscription.expiry_date) : dayjs(today)
+      //   expiryDate = currentExpiry.isAfter(dayjs(today))
+      //     ? currentExpiry.add(addDays, 'day').format('YYYY-MM-DD')
+      //     : dayjs(today).add(addDays, 'day').format('YYYY-MM-DD')
 
-        await this.dataSource
-          .createQueryBuilder()
-          .update('tbl_subscription')
-          .set({ expiry_date: expiryDate })
-          .where('id = :id', { id: existingSubscription.id })
-          .execute()
+      //   await this.dataSource
+      //     .createQueryBuilder()
+      //     .update('tbl_subscription')
+      //     .set({ expiry_date: expiryDate })
+      //     .where('id = :id', { id: existingSubscription.id })
+      //     .execute()
 
-        subscriptionRecordId = existingSubscription.id
-        subscriptionCode = existingSubscription.subscriptionid
-        await this.workflowService.callSubscriptionInsertWorkflow(subscriptionRecordId, 1)
-        // new call
-      } else {
-        // Create new subscription
-        expiryDate = dayjs(today).add(addDays, 'day').format('YYYY-MM-DD')
-        subscriptionCode = await this.getSubscriptionID()
+      //   subscriptionRecordId = existingSubscription.id
+      //   subscriptionCode = existingSubscription.subscriptionid
+      //   await this.workflowService.callSubscriptionInsertWorkflow(subscriptionRecordId, 1)
+      //   // new call
+      // } else {
+      //   // Create new subscription
+      //   expiryDate = dayjs(today).add(addDays, 'day').format('YYYY-MM-DD')
+      //   subscriptionCode = await this.getSubscriptionID()
 
-        const subInsert = await this.dataSource
-          .createQueryBuilder()
-          .insert()
-          .into('tbl_subscription')
-          .values({
-            subscriptionid: subscriptionCode,
-            subscriberid: userId,
-            serviceid: serviceId,
-            amount,
-            stype: 'Paid',
-            sales_manager: Number(user.sales_manager) || 0,
-            assigned_user: Number(user.assignedto) || 0,
-            trades_total: planData.credits,
-            pay_date: today,
-            plantype: 1,
-            pay_mode: 'Razorpay',
-            status: 'Active',
-            payment_source: 'MobileApp',
-            pay_refno: transactionId,
-            ordersub_refno: orderInsertedId,
-            expiry_date: expiryDate,
-            activation_date: activationDate,
-            razorpay_subscriptionid: razorpaySubscriptionId,
-            created_by: userId,
-            created_on: today,
-          })
-          .execute()
+      //   const subInsert = await this.dataSource
+      //     .createQueryBuilder()
+      //     .insert()
+      //     .into('tbl_subscription')
+      //     .values({
+      //       subscriptionid: subscriptionCode,
+      //       subscriberid: userId,
+      //       serviceid: serviceId,
+      //       amount,
+      //       stype: 'Paid',
+      //       sales_manager: Number(user.sales_manager) || 0,
+      //       assigned_user: Number(user.assignedto) || 0,
+      //       trades_total: planData.credits,
+      //       pay_date: today,
+      //       plantype: 1,
+      //       pay_mode: 'Razorpay',
+      //       status: 'Active',
+      //       payment_source: 'MobileApp',
+      //       pay_refno: transactionId,
+      //       ordersub_refno: orderInsertedId,
+      //       expiry_date: expiryDate,
+      //       activation_date: activationDate,
+      //       razorpay_subscriptionid: razorpaySubscriptionId,
+      //       created_by: userId,
+      //       created_on: today,
+      //     })
+      //     .execute()
 
-        subscriptionRecordId = subInsert.identifiers[0]?.id || subInsert.raw?.insertId
+      //   subscriptionRecordId = subInsert.identifiers[0]?.id || subInsert.raw?.insertId
 
-        await this.workflowService.callSubscriptionInsertWorkflow(subscriptionRecordId, 1)
-        // await this.commonService.checkWorkflowSubscriptionWorkflow(subscriptionRecordId, 'Add')
-      }
+      //   await this.workflowService.callSubscriptionInsertWorkflow(subscriptionRecordId, 1)
+      //   // await this.commonService.checkWorkflowSubscriptionWorkflow(subscriptionRecordId, 'Add')
+      // }
 
-      // 8. Insert into subscription history
-      await this.dataSource
-        .createQueryBuilder()
-        .insert()
-        .into('tbl_subscription_history')
-        .values({
-          subscriptionid: subscriptionRecordId,
-          subscriberid: userId,
-          serviceid: serviceId,
-          ordersub_id: orderSubId,
-          planid: serviceSubId ? String(serviceSubId) : null,
-          amount: planData.discount_price || amount,
-          activedate: today,
-          expirydate: expiryDate,
-          created_on: today,
-        })
-        .execute()
+      // // 8. Insert into subscription history
+      // await this.dataSource
+      //   .createQueryBuilder()
+      //   .insert()
+      //   .into('tbl_subscription_history')
+      //   .values({
+      //     subscriptionid: subscriptionRecordId,
+      //     subscriberid: userId,
+      //     serviceid: serviceId,
+      //     ordersub_id: orderSubId,
+      //     planid: serviceSubId ? String(serviceSubId) : null,
+      //     amount: planData.discount_price || amount,
+      //     activedate: today,
+      //     expirydate: expiryDate,
+      //     created_on: today,
+      //   })
+      //   .execute()
 
-      // 9. Referral points logic
-      if (!use_balance && couponcode) {
-        const subData = await this.dataSource
-          .createQueryBuilder()
-          .select('*')
-          .from('tbl_subscriber', 's')
-          .where('s.isdelete = 0 AND s.id != :userId AND s.referralcode = :couponcode', { userId, couponcode })
-          .getRawMany()
+      // // 9. Referral points logic
+      // if (!use_balance && couponcode) {
+      //   const subData = await this.dataSource
+      //     .createQueryBuilder()
+      //     .select('*')
+      //     .from('tbl_subscriber', 's')
+      //     .where('s.isdelete = 0 AND s.id != :userId AND s.referralcode = :couponcode', { userId, couponcode })
+      //     .getRawMany()
 
-        if (subData.length) {
-          const usedRef = await this.dataSource
-            .createQueryBuilder()
-            .select('*')
-            .from('tbl_referral_info', 'r')
-            .where('r.sub_id = :userId AND r.referral_code = :couponcode', { userId, couponcode })
-            .getRawMany()
+      //   if (subData.length) {
+      //     const usedRef = await this.dataSource
+      //       .createQueryBuilder()
+      //       .select('*')
+      //       .from('tbl_referral_info', 'r')
+      //       .where('r.sub_id = :userId AND r.referral_code = :couponcode', { userId, couponcode })
+      //       .getRawMany()
 
-          if (!usedRef.length) {
-            await this.dataSource
-              .createQueryBuilder()
-              .insert()
-              .into('tbl_referral_info')
-              .values({
-                referral_id: subData[0].id,
-                referral_code: couponcode,
-                sub_id: userId,
-                ref_source: 'MobileApp',
-                ref_amt: 20,
-                ref_type: 1,
-                created_by: userId,
-                created_on: today,
-              })
-              .execute()
+      //     if (!usedRef.length) {
+      //       await this.dataSource
+      //         .createQueryBuilder()
+      //         .insert()
+      //         .into('tbl_referral_info')
+      //         .values({
+      //           referral_id: subData[0].id,
+      //           referral_code: couponcode,
+      //           sub_id: userId,
+      //           ref_source: 'MobileApp',
+      //           ref_amt: 20,
+      //           ref_type: 1,
+      //           created_by: userId,
+      //           created_on: today,
+      //         })
+      //         .execute()
 
-            await this.dataSource
-              .createQueryBuilder()
-              .update('tbl_subscriber')
-              .set({
-                verifykycon: today,
-                verifykyc: 1,
-              })
-              .where('id = :userId', { userId })
-              .execute()
-          }
-        }
-      }
+      //       await this.dataSource
+      //         .createQueryBuilder()
+      //         .update('tbl_subscriber')
+      //         .set({
+      //           verifykycon: today,
+      //           verifykyc: 1,
+      //         })
+      //         .where('id = :userId', { userId })
+      //         .execute()
+      //     }
+      //   }
+      // }
 
-      // 10. Update razorpay order & subscriber
-      await this.dataSource
-        .createQueryBuilder()
-        .update('tbl_razorpay_order')
-        .set({
-          serviceid: serviceId,
-          subscriberid: userId,
-          ordertype: 1,
-          transactionid: transactionId,
-          status: 1,
-          updated_on: today,
-        })
-        .where('orderid = :orderid', { orderid: razorpaySubscriptionId })
-        .execute()
+      // // 10. Update razorpay order & subscriber
+      // await this.dataSource
+      //   .createQueryBuilder()
+      //   .update('tbl_razorpay_order')
+      //   .set({
+      //     serviceid: serviceId,
+      //     subscriberid: userId,
+      //     ordertype: 1,
+      //     transactionid: transactionId,
+      //     status: 1,
+      //     updated_on: today,
+      //   })
+      //   .where('orderid = :orderid', { orderid: razorpaySubscriptionId })
+      //   .execute()
 
-      await this.dataSource
-        .createQueryBuilder()
-        .update('tbl_subscriber')
-        .set({
-          verifykycon: today,
-          verifykyc: 1,
-        })
-        .where('id = :userId', { userId })
-        .execute()
+      // await this.dataSource
+      //   .createQueryBuilder()
+      //   .update('tbl_subscriber')
+      //   .set({
+      //     verifykycon: today,
+      //     verifykyc: 1,
+      //   })
+      //   .where('id = :userId', { userId })
+      //   .execute()
 
       return {
         success: true,
         message: 'Payment successful',
-        orderId: orderInsertedId,
-        subscriptionId: subscriptionRecordId,
-        subscriptionCode,
-        expiry_date: expiryDate,
+        // orderId: orderInsertedId,
+        // subscriptionId: subscriptionRecordId,
+        // subscriptionCode,
+        // expiry_date: expiryDate,
       }
     } catch (err) {
       this.logger.error('Error in paymentSuccessPortfolio:', err)
