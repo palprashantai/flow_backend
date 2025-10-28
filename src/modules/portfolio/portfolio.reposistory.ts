@@ -359,7 +359,7 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
         service_banner: item.service_banner,
         segmentName: item.segmentName,
         riskTag: item.riskTag,
-        return: { period: '1Y CAGR', value: parseFloat(item.returnValue || 0) },
+        return: { period: '3Y CAGR', value: parseFloat(item.returnValue || 0) },
         minInvestment: parseInt(item.minInvestment || 0),
         peopleInvestedLast30Days: parseInt(item.peopleInvestedLast30Days || 0),
         lastUpdated: new Date(item.lastUpdated),
