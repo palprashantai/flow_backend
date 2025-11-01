@@ -197,6 +197,7 @@ export class AuthService {
         utm_campaign: logEvent.utm_campaign || '',
         utm_medium: logEvent.utm_medium || '',
         isfolio: 1,
+        source: 1
       })
 
       finalSubscriber = await this.subscriberRepo.save(newSubscriber)
@@ -243,13 +244,8 @@ export class AuthService {
           type: 0,
         })
         .execute()
-      ;(this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1), // default productApp = 0
-        this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1),
-        // await this.grpcClient.checkLeadWorkflow(finalSubscriber.id) // Using the same ID for testing
-        // await this.grpcClient.checkSubscriberWorkflow(finalSubscriber.id, 'insert')
-
-        this.logger.info(`New subscriber created: ${subscriberid}`))
-    } else {
+      await this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1)
+      await this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1)
       // Existing subscriber flow
       if (!subscriber.email) {
         usertype = 1
@@ -499,7 +495,7 @@ export class AuthService {
     const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yqoW/F5XuOH`
 
     // const message = `Thanks for choosing Streetfolios. Your OTP to sign the terms of service is : ${otp} -STREETGAINS`
-          console.log(message)
+    console.log(message)
 
     this.logger.debug(`Sending SMS to ${subscriber.mobileno}: ${message}`)
     await this.commonService.sendSms(subscriber.mobileno, message)
