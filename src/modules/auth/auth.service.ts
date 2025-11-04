@@ -147,6 +147,7 @@ export class AuthService {
       this.logger.warn('OTP or Mobile number missing in otpVerification')
       throw new BadRequestException('Mobile number and OTP are required')
     }
+    console.log(`Verifying OTP ${cleanOtp} for mobile ${sanitizedMobile}`) // Debug log
 
     // Parallel execution of independent queries
     const [otpResult, subscriber, logEvent, referralConfig] = await Promise.all([
@@ -165,15 +166,18 @@ export class AuthService {
         .getRawOne(),
     ])
 
+    console.log('OTP record found:', otpResult) // Debug log
     if (!otpResult || otpResult.otpnumber !== cleanOtp) {
       this.logger.error(`Invalid OTP for ${sanitizedMobile}`)
       throw new UnauthorizedException('Invalid OTP')
     }
 
+    console.log('Log Event:', 'Verified') // Debug log
     const referralAmount = referralConfig ? Number(referralConfig.referral_amount) : 0
     let usertype = 0
     let finalSubscriber = subscriber
 
+    console.log('Subscriber found:', subscriber) // Debug log
     if (!subscriber) {
       // New subscriber flow
       usertype = 1
@@ -200,6 +204,8 @@ export class AuthService {
       })
 
       finalSubscriber = await this.subscriberRepo.save(newSubscriber)
+
+      console.log('New subscriber created with ID:', finalSubscriber.id) // Debug log
 
       // Parallel execution for new subscriber operations
       const [user] = await Promise.all([
@@ -243,18 +249,25 @@ export class AuthService {
           type: 0,
         })
         .execute()
-      ;(this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1), // default productApp = 0
-        this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1),
+      // ;(this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1), // default productApp = 0
+      //   this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1),
         // await this.grpcClient.checkLeadWorkflow(finalSubscriber.id) // Using the same ID for testing
         // await this.grpcClient.checkSubscriberWorkflow(finalSubscriber.id, 'insert')
 
-        this.logger.info(`New subscriber created: ${subscriberid}`))
+        // this.logger.info(`New subscriber created: ${subscriberid}`))
+
+        console.log('Calling workflows for new subscriber ID:', finalSubscriber.id) // Debug log
+        this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1)
+        this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1)
+
+        console.log('New subscriber flow completed for ID:', finalSubscriber.id) // Debug log
     } else {
       // Existing subscriber flow
       if (!subscriber.email) {
         usertype = 1
       }
 
+      console.log('Existing subscriber found:', subscriber.subscriberid) // Debug log
       // Update subscriber data
       Object.assign(subscriber, {
         deviceid: cleanDeviceId,
@@ -281,6 +294,7 @@ export class AuthService {
       this.logger.info(`Existing subscriber logged in: ${subscriber.subscriberid}`)
     }
 
+    console.log('Final subscriber ID:', finalSubscriber.id) // Debug log
     // Final parallel operations
     const [jwt] = await Promise.all([
       this.generateToken(finalSubscriber.id),
@@ -308,6 +322,7 @@ export class AuthService {
       state: finalSubscriber.state,
     }
 
+    console.log('Returning response with usertype:', usertype) // Debug log
     return { usertype, jwt, subscriber: filteredSubscriber }
   }
 
@@ -508,6 +523,7 @@ export class AuthService {
   async verifyOtp(dto: VerifyOtpDto, userId: number) {
     const { otp } = dto
 
+    console.log('Verifying OTP DTO:', dto) // Debug log to check incoming data
     const user = await getUserBy(
       { id: userId },
       ['mobileno'] // optional selected fields
@@ -517,6 +533,7 @@ export class AuthService {
       return { success: false, message: 'Error Validating OTP' }
     }
 
+    console.log(`Verifying OTP ${otp} for mobile ${mobileno}`) // Debug log
     try {
       const otpRecords = await this.dataSource
         .createQueryBuilder()
@@ -531,6 +548,7 @@ export class AuthService {
       if (!otpRecords.length) {
         return { success: false, message: 'Invalid OTP' }
       }
+      console.log('OTP record found:', otpRecords[0]) // Debug log
 
       // 🔹 3. Insert into tbl_subscriber_acceptance
       await this.dataSource
@@ -543,6 +561,7 @@ export class AuthService {
           source: 4, // pass 1/2/3/4 based on request
         })
         .execute()
+        console.log('User acceptance recorded for subscriber ID:', userId) // Debug log
 
       return { success: true, message: 'OTP verified' }
     } catch (error) {
