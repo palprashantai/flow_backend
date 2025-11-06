@@ -45,8 +45,18 @@ export async function getLangList() {
 
 export async function getStateList() {
   const ds = await dataSource
-  return await ds.createQueryBuilder().select('*').from('tbl_state', 's').getRawMany()
+
+  return await ds
+    .createQueryBuilder()
+    .select([
+      's.state_code AS state_id',
+      's.country_id AS country_id',
+      's.state_name AS state_name',
+    ])
+    .from('tbl_state', 's')
+    .getRawMany()
 }
+
 
 export async function getSubscriberDetails(subscriberid: number) {
   const ds = await dataSource
