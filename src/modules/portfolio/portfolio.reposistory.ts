@@ -197,16 +197,43 @@ export async function getFilteredPortfolios(filterDto: FilterPortfolioDto, userI
       's.updated_on AS lastUpdated',
       's.access_price AS getAccessPrice',
       's.is_free AS isFree',
-      'seg.segment_name AS segmentName', // 🔹 add this
+      'seg.segment_name AS segmentName', // ✅ include segment
     ]
 
-    let query = ds
+
+      // let query = ds
+      // .createQueryBuilder()
+      // .select(baseSelect)
+      // .from('tbl_services', 's')
+      // .leftJoin('tbl_segment', 'seg', 'seg.id = s.segid') // 🔹 always join segment
+      // .where('s.isdelete = 0 AND s.service_type = 1 AND s.activate = 1')
+
+    // === UserType filters
+
+    const query = ds
       .createQueryBuilder()
       .select(baseSelect)
       .from('tbl_services', 's')
-      .leftJoin('tbl_segment', 'seg', 'seg.id = s.segid') // 🔹 always join segment
-      .where('s.isdelete = 0 AND s.service_type = 1 AND s.activate = 1')
-
+      .leftJoin('tbl_segment', 'seg', 'seg.id = s.segid')
+      .where(
+        `
+    s.isdelete = 0
+    AND s.service_type = 1
+    AND (
+      s.activate = 1 
+      OR EXISTS (
+        SELECT 1
+        FROM tbl_subscription sub
+        WHERE sub.serviceid = s.id
+          AND sub.subscriberid = :userId
+          AND sub.status = 'Active'
+          AND sub.isdelete = 0
+      )
+    )
+  `
+      )
+      .orderBy('s.updated_on', 'DESC')
+      .setParameter('userId', userId) // ✅ bind the variable safely
     // === UserType filters
     if (userId && userType) {
       switch (userType) {
