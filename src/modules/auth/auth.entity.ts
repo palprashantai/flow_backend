@@ -328,6 +328,9 @@ export class OtpBoxEntity {
 
   @Column({ type: 'tinyint', width: 1, default: 0 })
   isuser: number
+
+  @Column({ type: 'tinyint', width: 1, default: 0 })
+  otp_source: number
 }
 
 @Entity('tbl_userinfo')

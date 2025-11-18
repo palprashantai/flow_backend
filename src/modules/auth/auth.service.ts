@@ -177,7 +177,6 @@ export class AuthService {
     let usertype = 0
     let finalSubscriber = subscriber
 
-    console.log('Subscriber found:', subscriber) // Debug log
     if (!subscriber) {
       // New subscriber flow
       usertype = 1

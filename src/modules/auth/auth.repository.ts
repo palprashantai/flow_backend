@@ -45,7 +45,7 @@ export async function insertOtp(mobile: string, otp: number, createdOn: string):
         mobileno: mobile,
         otpnumber: otp,
         created_on: createdOn,
-                  otp_source: 4, // 3 → SG Main
+        otp_source: 4, // 3 → SG Main
 
       })
       .execute()
