@@ -362,37 +362,30 @@ export class PortfolioDetailReposistory {
         let r = (num >> 16) + Math.round((255 - (num >> 16)) * factor)
         let g = ((num >> 8) & 0x00ff) + Math.round((255 - ((num >> 8) & 0x00ff)) * factor)
         let b = (num & 0x0000ff) + Math.round((255 - (num & 0x0000ff)) * factor)
-
-        r = Math.min(255, r)
-        g = Math.min(255, g)
-        b = Math.min(255, b)
-
         return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
       }
 
-      // Group stocks by sector
       const sectorMap = new Map<string, { sector: string; value: number; stocks: { name: string; value: number }[] }>()
 
       for (const item of portfolioData) {
         const sector = item.portfolio_segment || 'Unknown'
         const stockName = item.stocks
-        const weight = item.weightage || 0
+
+        // ✔️ FIXED: convert "20.00" → 20
+        const weight = Number(item.weightage) || 0
 
         if (!sectorMap.has(sector)) {
           sectorMap.set(sector, { sector, value: 0, stocks: [] })
         }
 
         const sectorData = sectorMap.get(sector)!
-        sectorData.value += weight
+        sectorData.value += weight // ✔️ Now number addition
         sectorData.stocks.push({ name: stockName, value: weight })
       }
 
       const sectors = Array.from(sectorMap.values())
-
-      // Find max value for color calculation
       const maxValue = Math.max(...sectors.map((s) => s.value))
 
-      // Assign colors with variation
       return sectors.map((sectorData, idx) => {
         const baseFactor = 1 - sectorData.value / maxValue
         const variation = (idx * 0.1) % 0.3
@@ -400,13 +393,13 @@ export class PortfolioDetailReposistory {
 
         return {
           sector: sectorData.sector,
-          value: Math.round(sectorData.value * 100) / 100, // round to 2 decimals
+          value: Math.round(sectorData.value * 100) / 100,
           color: lightenColor(baseColor, factor),
           stocks: sectorData.stocks,
         }
       })
     } catch (error) {
-      logger.error('Error building segment composition:', error)
+      console.error('Error building segment composition:', error)
       throw error
     }
   }
