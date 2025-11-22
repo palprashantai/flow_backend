@@ -43,6 +43,7 @@ export class SettingController {
   }
 
   @Post('log')
+  // @Auth()
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Log app event',

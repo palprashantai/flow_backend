@@ -112,14 +112,20 @@ export class SettingService {
    */
   async createEvent(dto: CreateAppEventLogDto, userId: number): Promise<void> {
     try {
-      // Build and save the event
+      // Generate correct IST datetime
+      const nowUtc = new Date()
+      const istOffset = 5.5 * 60 * 60 * 1000
+      const istNow = new Date(nowUtc.getTime() + istOffset)
+
       const newEvent: Partial<AppEventLog> = {
         screen_name: dto.screen_name || '',
         event_type: dto.event_type || '',
         device_id: dto.device_id || '',
         payload: dto.payload || '',
         subscriberid: userId || 0,
+        created_on: istNow,
       }
+
       const event = this.applogRepo.create(newEvent)
       await this.applogRepo.save(event)
     } catch (error) {

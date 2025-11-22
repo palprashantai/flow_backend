@@ -23,5 +23,5 @@ export class AppEventLog {
   payload?: string
 
   @CreateDateColumn({ type: 'datetime', name: 'created_on' })
-  createdAt: Date
+  created_on: Date
 }
