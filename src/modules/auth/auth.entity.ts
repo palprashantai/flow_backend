@@ -44,6 +44,10 @@ export class Subscriber {
   @Column({ type: 'text', nullable: true })
   address: string
 
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+folio_deviceid: string
+
   @Column({ type: 'varchar', length: 50, nullable: true })
   occupation: string
 

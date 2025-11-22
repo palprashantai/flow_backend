@@ -83,7 +83,7 @@ export class AuthService {
       if (cleanDeviceId) {
         const deviceCheck = await this.subscriberRepo.findOne({
           where: {
-            deviceid: cleanDeviceId,
+            folio_deviceid: cleanDeviceId,
             isdelete: 0,
             mobileno: Not(sanitizedMobile),
           },
@@ -147,9 +147,8 @@ export class AuthService {
       this.logger.warn('OTP or Mobile number missing in otpVerification')
       throw new BadRequestException('Mobile number and OTP are required')
     }
-    console.log(`Verifying OTP ${cleanOtp} for mobile ${sanitizedMobile}`) // Debug log
 
-    // Parallel execution of independent queries
+    // Run queries in parallel
     const [otpResult, subscriber, logEvent, referralConfig] = await Promise.all([
       this.otpRepo.findOne({
         where: { mobileno: sanitizedMobile },
@@ -166,63 +165,63 @@ export class AuthService {
         .getRawOne(),
     ])
 
-    console.log('OTP record found:', otpResult) // Debug log
     if (!otpResult || otpResult.otpnumber !== cleanOtp) {
       this.logger.error(`Invalid OTP for ${sanitizedMobile}`)
       throw new UnauthorizedException('Invalid OTP')
     }
 
-    console.log('Log Event:', 'Verified') // Debug log
     const referralAmount = referralConfig ? Number(referralConfig.referral_amount) : 0
+
     let usertype = 0
     let finalSubscriber = subscriber
 
+    // ---------------------------------------------------------------------
+    // NEW SUBSCRIBER FLOW
+    // ---------------------------------------------------------------------
     if (!subscriber) {
-      // New subscriber flow
       usertype = 1
+
       const [subscriberid, assignedto] = await Promise.all([
         getNextSubscriberID(),
         this.workflowService.assignLeadSubscriber('MobileApp', 0, 1),
       ])
-      console.log(assignedto)
+
       const newSubscriber = this.subscriberRepo.create({
-        subscriberid: subscriberid,
+        subscriberid,
         assignedto,
         fullname: 'Subscriber',
         mobileno: sanitizedMobile,
         email: '',
         lead_source: 'MobileApp',
-        deviceid: cleanDeviceId,
+        folio_deviceid: cleanDeviceId,
         token: cleanToken,
         created_on: currentTime,
         recent_contacted: currentTime,
-        utm_source: logEvent.utm_source || '',
-        utm_campaign: logEvent.utm_campaign || '',
-        utm_medium: logEvent.utm_medium || '',
+        utm_source: logEvent?.utm_source || '',
+        utm_campaign: logEvent?.utm_campaign || '',
+        utm_medium: logEvent?.utm_medium || '',
         isfolio: 1,
-        source: 1
+        source: 1,
       })
 
       finalSubscriber = await this.subscriberRepo.save(newSubscriber)
 
-      console.log('New subscriber created with ID:', finalSubscriber.id) // Debug log
-
-      // Parallel execution for new subscriber operations
+      // Parallel (referral + recent logs)
       const [user] = await Promise.all([
-        getUserBy({ referralcode: logEvent.utm_campaign }, ['id']),
+        getUserBy({ referralcode: logEvent?.utm_campaign }, ['id']),
         this.subscriberRecentRepo.save({
           subscriberid: finalSubscriber.id,
           source: 'MobileApp',
           lead_type: usertype,
           lead_source: 'MobileApp',
           created_on: new Date(),
-          utm_source: logEvent.utm_source || '',
-          utm_campaign: logEvent.utm_campaign || '',
-          utm_medium: logEvent.utm_medium || '',
+          utm_source: logEvent?.utm_source || '',
+          utm_campaign: logEvent?.utm_campaign || '',
+          utm_medium: logEvent?.utm_medium || '',
         }),
       ])
 
-      // Referral operations (wallet folio depends on referral folio ID)
+      // Insert referral info
       const referralFolio = await this.dataSource
         .createQueryBuilder()
         .insert()
@@ -230,7 +229,7 @@ export class AuthService {
         .values({
           sub_id: finalSubscriber.id,
           referral_id: user?.id || 0,
-          referral_code: logEvent.utm_campaign,
+          referral_code: logEvent?.utm_campaign,
           amount: referralAmount,
           status: 0,
           updated_on: currentTime,
@@ -249,22 +248,23 @@ export class AuthService {
           type: 0,
         })
         .execute()
+
       await this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1)
       await this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1)
-      // Existing subscriber flow
-      if (!subscriber.email) {
-        usertype = 1
-      }
+    }
 
-      console.log('Existing subscriber found:', subscriber.subscriberid) // Debug log
-      // Update subscriber data
+    // ---------------------------------------------------------------------
+    // EXISTING SUBSCRIBER FLOW
+    // ---------------------------------------------------------------------
+    if (subscriber) {
+      if (!subscriber.email) usertype = 1
+
       Object.assign(subscriber, {
-        deviceid: cleanDeviceId,
+        folio_deviceid: cleanDeviceId,
         token: cleanToken,
         recent_contacted: new Date(),
       })
 
-      // Parallel execution for existing subscriber
       await Promise.all([
         this.subscriberRepo.save(subscriber),
         this.subscriberRecentRepo.save({
@@ -273,18 +273,18 @@ export class AuthService {
           lead_type: usertype,
           lead_source: 'MobileApp',
           created_on: new Date(),
-          utm_source: logEvent.utm_source || '',
-          utm_campaign: logEvent.utm_campaign || '',
-          utm_medium: logEvent.utm_medium || '',
+          utm_source: logEvent?.utm_source || '',
+          utm_campaign: logEvent?.utm_campaign || '',
+          utm_medium: logEvent?.utm_medium || '',
         }),
       ])
 
       finalSubscriber = subscriber
-      this.logger.info(`Existing subscriber logged in: ${subscriber.subscriberid}`)
     }
 
-    console.log('Final subscriber ID:', finalSubscriber.id) // Debug log
-    // Final parallel operations
+    // ---------------------------------------------------------------------
+    // INSERT INTO tbl_app_folio + GENERATE JWT
+    // ---------------------------------------------------------------------
     const [jwt] = await Promise.all([
       this.generateToken(finalSubscriber.id),
       this.dataSource
@@ -311,7 +311,6 @@ export class AuthService {
       state: finalSubscriber.state,
     }
 
-    console.log('Returning response with usertype:', usertype) // Debug log
     return { usertype, jwt, subscriber: filteredSubscriber }
   }
 
@@ -550,7 +549,7 @@ export class AuthService {
           source: 4, // pass 1/2/3/4 based on request
         })
         .execute()
-        console.log('User acceptance recorded for subscriber ID:', userId) // Debug log
+      console.log('User acceptance recorded for subscriber ID:', userId) // Debug log
 
       return { success: true, message: 'OTP verified' }
     } catch (error) {

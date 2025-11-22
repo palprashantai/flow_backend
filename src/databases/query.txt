@@ -168,3 +168,6 @@ MODIFY COLUMN discount_price_monthly INT NOT NULL DEFAULT 0;
 
 ALTER TABLE streetgains.tbl_services_sub
 MODIFY COLUMN    INT NOT NULL DEFAULT 0;
+
+ALTER TABLE streetgains.tbl_subscriber
+ADD COLUMN folio_deviceid VARCHAR(255) DEFAULT NULL AFTER deviceid;
