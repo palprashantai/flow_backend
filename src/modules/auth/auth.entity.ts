@@ -44,6 +44,9 @@ export class Subscriber {
   @Column({ type: 'text', nullable: true })
   address: string
 
+   @Column({ type: 'tinyint', width: 1, default: 0, comment: '0=unread, 1=read' })
+  isRead: number
+
 
   @Column({ type: 'varchar', length: 255, nullable: true })
 folio_deviceid: string

@@ -201,6 +201,7 @@ export class AuthService {
         utm_campaign: logEvent?.utm_campaign || '',
         utm_medium: logEvent?.utm_medium || '',
         isfolio: 1,
+        isRead: 0,
         source: 1,
       })
 
@@ -262,6 +263,7 @@ export class AuthService {
       Object.assign(subscriber, {
         folio_deviceid: cleanDeviceId,
         token: cleanToken,
+        isRead: 0,
         recent_contacted: new Date(),
       })
 
