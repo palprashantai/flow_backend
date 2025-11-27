@@ -44,12 +44,20 @@ export class Subscriber {
   @Column({ type: 'text', nullable: true })
   address: string
 
-   @Column({ type: 'tinyint', width: 1, default: 0, comment: '0=unread, 1=read' })
+  @Column({ type: 'tinyint', width: 1, default: 0, comment: '0=unread, 1=read' })
   isRead: number
 
-
   @Column({ type: 'varchar', length: 255, nullable: true })
-folio_deviceid: string
+  folio_deviceid: string
+
+  @Column({ type: 'datetime', nullable: true })
+  trade_created_on: Date
+
+  @Column({ type: 'datetime', nullable: true })
+  folio_created_on: Date
+
+  @Column({ type: 'int', nullable: true, default: 0 })
+  assignedto_folio: number
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   occupation: string

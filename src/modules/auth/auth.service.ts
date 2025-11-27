@@ -188,7 +188,7 @@ export class AuthService {
 
       const newSubscriber = this.subscriberRepo.create({
         subscriberid,
-        assignedto,
+        // assignedto,
         fullname: 'Subscriber',
         mobileno: sanitizedMobile,
         email: '',
@@ -203,6 +203,8 @@ export class AuthService {
         isfolio: 1,
         isRead: 0,
         source: 1,
+        assignedto_folio: assignedto,
+        folio_created_on: currentTime,
       })
 
       finalSubscriber = await this.subscriberRepo.save(newSubscriber)
