@@ -6,8 +6,15 @@ import { ComplianceItemDto, CreateAppEventLogDto, CreateSubscriberEventDto, Upda
 import { InjectRepository } from '@nestjs/typeorm'
 import { AppEventLog } from './setting.entity'
 import { logger } from 'middlewares/logger.middleware'
-import { getCompanyInfo, getFinePrint, getSubscriberInfo, insertSubscriberEvent, updateNotifications } from './setting.reposistory'
-import { getUserBy } from 'modules/auth/auth.repository'
+import {
+  getCompanyInfo,
+  getFinePrint,
+  getSubscriberInfo,
+  getSubscriberNotificationDetails,
+  insertSubscriberEvent,
+ 
+  updateSubscriberNotifications,
+} from './setting.reposistory'
 
 @Injectable()
 export class SettingService {
@@ -18,57 +25,34 @@ export class SettingService {
     private readonly applogRepo: Repository<AppEventLog>
   ) {}
 
-  async getSubscriberNotificationSettings(userId: number) {
+  async getSubscriberNotificationSettings(subscriberId: number) {
     try {
-      const user = await getUserBy({ id: userId }, [
-        'subscription_alerts',
-        'rebalance_alerts',
-        'investment_push',
-        'offers_discounts_push',
-        'market_updates',
-        'renewal_reminders',
-        'whatsapp_notifications',
-      ])
+      const current = await getSubscriberNotificationDetails(subscriberId)
 
-      if (!user) {
-        throw new NotFoundException(`Subscriber with ID ${userId} not found`)
+      if (!current) {
+        throw new NotFoundException(`Subscriber details not found for ID ${subscriberId}`)
       }
 
       return {
         success: true,
         message: 'Successful',
-        result: {
-          subscription_alerts: user.subscription_alerts,
-          rebalance_alerts: user.rebalance_alerts,
-          investment_push: user.investment_push,
-          offers_discounts_push: user.offers_discounts_push,
-          market_updates: user.market_updates,
-          renewal_reminders: user.renewal_reminders,
-          whatsapp_notifications: user.whatsapp_notifications,
-        },
+        result: current,
       }
     } catch (error) {
-      this.logger.error('Error fetching notification settings:', error)
+      console.error('Error fetching notification settings:', error)
       if (error instanceof NotFoundException) throw error
       throw new InternalServerErrorException('Failed to retrieve notification settings')
     }
   }
 
-  async updateNotifications(dto: UpdateNotificationDto, userId: number): Promise<{ n_type: number; status: number }[]> {
+  // Update subscriber notification settings
+  async updateNotifications(dto: UpdateNotificationDto, subscriberId: number): Promise<{ n_type: number; status: number }[]> {
     try {
       // 1. Load current values
-      const current = await getUserBy({ id: userId }, [
-        'subscription_alerts',
-        'rebalance_alerts',
-        'investment_push',
-        'offers_discounts_push',
-        'market_updates',
-        'renewal_reminders',
-        'whatsapp_notifications',
-      ])
+      const current = await getSubscriberNotificationDetails(subscriberId)
 
       if (!current) {
-        throw new NotFoundException(`Subscriber with ID ${userId} not found`)
+        throw new NotFoundException(`Subscriber details not found for ID ${subscriberId}`)
       }
 
       // 2. Prepare update fields
@@ -83,7 +67,7 @@ export class SettingService {
       }
 
       // 3. Update row
-      await updateNotifications(updateFields, userId)
+      await updateSubscriberNotifications(updateFields, subscriberId)
 
       // 4. Always return all statuses
       return [

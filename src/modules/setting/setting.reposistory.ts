@@ -134,10 +134,46 @@ export async function insertSubscriberEvent(serviceId: number, subscriberId: num
   )
 }
 
-export async function updateNotifications(updateFields: any, userId: number) {
+// export async function updateNotifications(updateFields: any, userId: number) {
+//   const ds = await dataSource
+
+//   await ds.createQueryBuilder().update('tbl_subscriber').set(updateFields).where('id = :id', { id: userId }).execute()
+// }
+
+// helpers/subscriberDetails.helper.ts
+
+// Fetch latest subscriber notification settings
+export async function getSubscriberNotificationDetails(subscriberId: number) {
   const ds = await dataSource
 
-  await ds.createQueryBuilder().update('tbl_subscriber').set(updateFields).where('id = :id', { id: userId }).execute()
+  return await ds
+    .createQueryBuilder()
+    .select([
+      't1.subscription_alerts AS subscription_alerts',
+      't1.rebalance_alerts AS rebalance_alerts',
+      't1.investment_push AS investment_push',
+      't1.offers_discounts_push AS offers_discounts_push',
+      't1.market_updates AS market_updates',
+      't1.renewal_reminders AS renewal_reminders',
+      't1.whatsapp_notifications AS whatsapp_notifications',
+    ])
+    .from('tbl_subscriber_details', 't1')
+    .where('t1.subscriberid = :subscriberId', { subscriberId })
+    .orderBy('t1.id', 'DESC')
+    .limit(1)
+    .getRawOne()
+}
+
+// Update subscriber notification settings
+export async function updateSubscriberNotifications(updateFields: any, subscriberId: number) {
+  const ds = await dataSource
+
+  return await ds
+    .createQueryBuilder()
+    .update('tbl_subscriber_details')
+    .set(updateFields)
+    .where('subscriberid = :subscriberId', { subscriberId })
+    .execute()
 }
 
 export async function getFaqList(seoId: number) {
