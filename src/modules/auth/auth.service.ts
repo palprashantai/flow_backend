@@ -286,6 +286,34 @@ export class AuthService {
       finalSubscriber = subscriber
     }
 
+    if (subscriber.isfolio === 0) {
+      // Assign folio workflow user
+      const assignedto = await this.workflowService.assignLeadSubscriber('MobileApp', 0, 1)
+
+      // Update subscriber folio fields
+      const query = `
+    UPDATE tbl_subscriber
+    SET 
+      isfolio = 1,
+      folio_created_on = ?,
+      assignedto = ?
+    WHERE id = ?
+      AND isdelete = 0
+  `
+
+      await this.dataSource.query(query, [
+        currentTime, // folio_created_on
+        assignedto, // assignedto_folio (same as assignedto)
+        subscriber.id, // id
+      ])
+
+      // Call workflows
+      await this.workflowService.callLeadCreationWorkflow(subscriber.id, 1)
+      await this.workflowService.callSubscriberInsertWorkflow(subscriber.id, 1)
+
+      console.log(`🔥 Updated folio activation for subscriber ${subscriber.id}`)
+    }
+
     // ---------------------------------------------------------------------
     // INSERT INTO tbl_app_folio + GENERATE JWT
     // ---------------------------------------------------------------------
