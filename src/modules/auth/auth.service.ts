@@ -136,7 +136,7 @@ export class AuthService {
     deviceId: string,
     otp: string,
     fcmToken: string
-  ): Promise<{ usertype: number; jwt: string; subscriber: any }> {
+  ): Promise<{ usertype: number; jwt: string; subscriber: any; foliousertype: number }> {
     const sanitizedMobile = sanitizeMobile(mobileNo)
     const cleanOtp = sanitize(otp)
     const cleanDeviceId = deviceId || ''
@@ -173,6 +173,7 @@ export class AuthService {
     const referralAmount = referralConfig ? Number(referralConfig.referral_amount) : 0
 
     let usertype = 0
+    let foliousertype = 0
     let finalSubscriber = subscriber
 
     // ---------------------------------------------------------------------
@@ -180,6 +181,7 @@ export class AuthService {
     // ---------------------------------------------------------------------
     if (!subscriber) {
       usertype = 1
+      foliousertype = 1
 
       const [subscriberid, assignedto] = await Promise.all([
         getNextSubscriberID(),
@@ -261,6 +263,7 @@ export class AuthService {
     // ---------------------------------------------------------------------
     if (subscriber) {
       if (!subscriber.email) usertype = 1
+      if (subscriber.isfolio === 0) foliousertype = 1
 
       Object.assign(subscriber, {
         folio_deviceid: cleanDeviceId,
@@ -343,7 +346,7 @@ export class AuthService {
       state: finalSubscriber.state,
     }
 
-    return { usertype, jwt, subscriber: filteredSubscriber }
+    return { usertype, jwt, subscriber: filteredSubscriber,foliousertype }
   }
 
   /**
