@@ -80,7 +80,7 @@ export class CreateSubscriberEventDto {
   serviceid: number
 
   @ApiProperty({ example: 0, required: false })
-  @IsOptional()       // <--- Must use IsOptional()
+  @IsOptional() // <--- Must use IsOptional()
   @IsNumber()
   planid?: number
 
@@ -89,8 +89,39 @@ export class CreateSubscriberEventDto {
   event_type?: string
 }
 
-
 export class ComplianceItemDto {
   name: string
   value: string // URL
+}
+
+export class CreateFolioTrackingDto {
+  @ApiPropertyOptional({ description: 'UTM Source', example: 'Google' })
+  @IsOptional()
+  @IsString()
+  utm_source?: string
+
+  @ApiPropertyOptional({ description: 'UTM Medium', example: 'CPC' })
+  @IsOptional()
+  @IsString()
+  utm_medium?: string
+
+  @ApiPropertyOptional({ description: 'UTM Campaign', example: 'Campaign01' })
+  @IsOptional()
+  @IsString()
+  utm_campaign?: string
+
+  @ApiPropertyOptional({ description: 'UTM Content', example: 'Content1' })
+  @IsOptional()
+  @IsString()
+  utm_content?: string
+
+  @ApiPropertyOptional({ description: 'UTM Term', example: 'keyword' })
+  @IsOptional()
+  @IsString()
+  utm_term?: string
+
+  @ApiPropertyOptional({ description: 'Click ID', example: 'abc123' })
+  @IsOptional()
+  @IsString()
+  clickid?: string
 }

@@ -171,3 +171,27 @@ MODIFY COLUMN    INT NOT NULL DEFAULT 0;
 
 ALTER TABLE streetgains.tbl_subscriber
 ADD COLUMN folio_deviceid VARCHAR(255) DEFAULT NULL AFTER deviceid;
+
+CREATE TABLE `tbl_folio_tracking` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `subscriberid` VARCHAR(50) NOT NULL,
+
+  -- UTM Columns
+  `utm_source` VARCHAR(50) DEFAULT NULL,
+  `utm_medium` VARCHAR(255) DEFAULT NULL,
+  `utm_campaign` VARCHAR(255) DEFAULT NULL,
+  `utm_content` VARCHAR(50) DEFAULT NULL,
+  `utm_term` VARCHAR(255) DEFAULT NULL,
+  `clickid` VARCHAR(255) DEFAULT NULL,
+
+  -- Optional tracking metadata
+  `created_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_on` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+
+
+  PRIMARY KEY (`id`),
+  KEY `subscriberid` (`subscriberid`),
+  KEY `utm_source` (`utm_source`),
+  KEY `utm_medium` (`utm_medium`),
+  KEY `utm_campaign` (`utm_campaign`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;

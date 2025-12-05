@@ -33,6 +33,22 @@ import { ReferralModule } from 'modules/referral/referral.module'
       global: true,
     },
 
+    TypeOrmModule.forRoot({
+      name: 'secondary',
+      type: 'mysql',
+      host: process.env.SECONDARY_DB_HOST || 'localhost',
+      port: parseInt(process.env.SECONDARY_DB_PORT || '3306'),
+      username: process.env.SECONDARY_DB_USER || 'root',
+      password: process.env.SECONDARY_DB_PASS || 'password2',
+      database: process.env.SECONDARY_DB_NAME || 'analytics_db',
+      entities: [__dirname + '/path/to/analytics/**/*.entity{.ts,.js}'],
+      synchronize: false,
+      extra: {
+        connectionLimit: 10, // adjust higher if needed
+      },
+      // autoLoadEntities: true, // optional if entities path is set
+    }),
+
     ConfigModule.forRoot({
       isGlobal: true,
     }),

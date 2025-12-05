@@ -195,3 +195,21 @@ export async function getFaqList(seoId: number) {
     return { success: false, message: 'Failed to fetch FAQ list', error: error.message }
   }
 }
+export async function insertRow(table: string, values: Record<string, any>) {
+  try {
+    const ds = await dataSource
+
+    const result = await ds.createQueryBuilder().insert().into(table).values(values).execute()
+
+    return {
+      success: true,
+      id: result?.identifiers?.[0]?.id || null,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Insert failed',
+      error: error.message,
+    }
+  }
+}

@@ -1,7 +1,13 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common'
 import { SettingService } from './setting.service'
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
-import { ComplianceItemDto, CreateAppEventLogDto, CreateSubscriberEventDto, UpdateNotificationDto } from './setting.dto'
+import {
+  ComplianceItemDto,
+  CreateAppEventLogDto,
+  CreateFolioTrackingDto,
+  CreateSubscriberEventDto,
+  UpdateNotificationDto,
+} from './setting.dto'
 import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { getFaqList, streetfoliosInfo } from './setting.reposistory'
 
@@ -137,5 +143,17 @@ export class SettingController {
     console.log('logSubscriberEvent', dto, userId)
     await this.settingService.createSubscriberEvent(dto, userId)
     return { status: 'success' }
+  }
+
+  @Post('insert-folio-tracking')
+  @ApiBearerAuth()
+  @Auth()
+  @ApiOperation({ summary: 'Insert Folio Tracking Data' })
+  @ApiResponse({ status: 201, description: 'Folio tracking inserted successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  async insertFolioTracking(@Body() dto: CreateFolioTrackingDto, @GetUserId('id') userId: number) {
+    console.log('insertFolioTracking', dto, userId)
+    return this.settingService.insertFolioTracking(dto, userId)
   }
 }

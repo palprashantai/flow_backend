@@ -1,9 +1,15 @@
 // ticket-category.service.ts
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
-import { Repository } from 'typeorm'
-import { ComplianceItemDto, CreateAppEventLogDto, CreateSubscriberEventDto, UpdateNotificationDto } from './setting.dto'
+import { DataSource, Repository } from 'typeorm'
+import {
+  ComplianceItemDto,
+  CreateAppEventLogDto,
+  CreateFolioTrackingDto,
+  CreateSubscriberEventDto,
+  UpdateNotificationDto,
+} from './setting.dto'
 
-import { InjectRepository } from '@nestjs/typeorm'
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm'
 import { AppEventLog } from './setting.entity'
 import { logger } from 'middlewares/logger.middleware'
 import {
@@ -12,7 +18,6 @@ import {
   getSubscriberInfo,
   getSubscriberNotificationDetails,
   insertSubscriberEvent,
- 
   updateSubscriberNotifications,
 } from './setting.reposistory'
 
@@ -22,7 +27,9 @@ export class SettingService {
 
   constructor(
     @InjectRepository(AppEventLog)
-    private readonly applogRepo: Repository<AppEventLog>
+    private readonly applogRepo: Repository<AppEventLog>,
+    @InjectDataSource('secondary')
+    private readonly secondarySource: DataSource
   ) {}
 
   async getSubscriberNotificationSettings(subscriberId: number) {
@@ -193,13 +200,55 @@ export class SettingService {
   async createSubscriberEvent(dto: CreateSubscriberEventDto, subscriberId: number): Promise<void> {
     try {
       const { serviceid, event_type, planid } = dto
-      console.log('createSubscriberEvent', dto, subscriberId)
 
       // Use ?? to default only if planid is undefined
       await insertSubscriberEvent(serviceid, subscriberId, event_type ?? null, planid ?? 0)
     } catch (error) {
       console.error('Error creating subscriber event:', error)
       throw new InternalServerErrorException('Internal Server Error')
+    }
+  }
+
+  async insertFolioTracking(dto: CreateFolioTrackingDto, subscriberid: number): Promise<any> {
+    const now = new Date()
+    const istTime = new Date(now.getTime() + 5.5 * 60 * 60 * 1000)
+    const createdOn = istTime.toISOString().slice(0, 19).replace('T', ' ')
+    const payload = {
+      subscriberid: subscriberid,
+      utm_source: dto.utm_source,
+      utm_medium: dto.utm_medium,
+      utm_campaign: dto.utm_campaign,
+      utm_content: dto.utm_content,
+      utm_term: dto.utm_term,
+      clickid: dto.clickid,
+      created_on: createdOn,
+    }
+
+    const result = await this.insertRow('tbl_folio_tracking', payload)
+
+    if (!result.success) {
+      throw new InternalServerErrorException('Failed to insert folio tracking')
+    }
+
+    return { id: result.id }
+  }
+
+  async insertRow(table: string, values: Record<string, any>) {
+    try {
+      const ds = await this.secondarySource
+
+      const result = await ds.createQueryBuilder().insert().into(table).values(values).execute()
+
+      return {
+        success: true,
+        id: result?.identifiers?.[0]?.id || null,
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Insert failed',
+        error: error.message,
+      }
     }
   }
 }
