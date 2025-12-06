@@ -304,6 +304,14 @@ export class Subscriber {
 
   @Column({ type: 'tinyint', default: 0 })
   source: number
+
+  @Column({
+    type: 'tinyint',
+    width: 1,
+    default: 0,
+    comment: '0 = not read, 1 = read',
+  })
+  is_folio_read: number
 }
 
 @Entity('tbl_log3')
