@@ -299,7 +299,7 @@ export class AuthService {
     SET 
       isfolio = 1,
       folio_created_on = ?,
-      assignedto = ?
+      assignedto_folio = ?
     WHERE id = ?
       AND isdelete = 0
   `
