@@ -178,6 +178,7 @@ export class PaymentService {
           orderid: subscription.id, // Razorpay subscription ID
           transactionid: null, // will be filled after payment
           status: 0,
+          source: 4,
           discount_code: serviceSub.discount_code || null,
           discount_price: serviceSub.discount_price || 0,
           credits_price: serviceSub.credits_price || 0,
@@ -253,6 +254,7 @@ export class PaymentService {
           orderid: order.id, // Razorpay order ID
           transactionid: null, // will be updated on payment success
           status: 0, // 0 = pending
+          source: 4,
           updated_on: new Date(),
         })
         .execute()
