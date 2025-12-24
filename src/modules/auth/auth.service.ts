@@ -207,6 +207,7 @@ export class AuthService {
         is_folio_read: 0,
         source: 1,
         assignedto_folio: assignedto,
+        assignedto: assignedto,
         folio_created_on: currentTime,
       })
 
@@ -255,8 +256,8 @@ export class AuthService {
         })
         .execute()
 
-      await this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1)
-      await this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1)
+      this.workflowService.callLeadCreationWorkflow(finalSubscriber.id, 1)
+      this.workflowService.callSubscriberInsertWorkflow(finalSubscriber.id, 1)
     }
 
     // ---------------------------------------------------------------------
@@ -292,7 +293,7 @@ export class AuthService {
 
     if (subscriber.isfolio === 0) {
       // Assign folio workflow user
-      const assignedto = await this.workflowService.assignLeadSubscriber('MobileApp', 0, 1)
+      // const assignedto = await this.workflowService.assignLeadSubscriber('MobileApp', 0, 1)
 
       // Update subscriber folio fields
       const query = `
@@ -300,18 +301,17 @@ export class AuthService {
     SET 
       isfolio = 1,
       is_folio_read = 0,
-      folio_created_on = ?,
-      assignedto_folio = ?
+      folio_created_on = ? 
     WHERE id = ?
       AND isdelete = 0
   `
 
       await this.dataSource.query(query, [
         currentTime, // folio_created_on
-        assignedto, // assignedto_folio (same as assignedto)
         subscriber.id, // id
       ])
-
+console.log(`🔥 Existing subscriber login: ${subscriber.id}`)
+      
       // Call workflows
       await this.workflowService.callLeadCreationWorkflow(subscriber.id, 1)
       await this.workflowService.callSubscriberInsertWorkflow(subscriber.id, 1)
