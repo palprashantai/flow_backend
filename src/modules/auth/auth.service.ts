@@ -108,9 +108,9 @@ export class AuthService {
 
       await insertOtp(sanitizedMobile, otp, now)
 
-      const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yZSLnaXi4Y6`
+      // const message = `<#> Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS \n5r0ncciKL40`
 
-      // const message = `Welcome to Streetfolio - Model Portfolios by Streetgains\nYour login OTP is ${otp}\n\nZrPVJ2XWTij -STREETGAINS`
+      const message = `Welcome to Streetfolio - Model Portfolios by Streetgains\nYour login OTP is ${otp} 0vSY/VO83ac -STREETGAINS`
       console.log(message)
 
       this.logger.debug(`Sending SMS to ${sanitizedMobile}: ${message}`)
@@ -536,8 +536,9 @@ console.log(`🔥 Existing subscriber login: ${subscriber.id}`)
 
     await insertOtp(subscriber.mobileno, otp, now)
 
-    const message = `Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS yZSLnaXi4Y6`
+    // const message = `<#> Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS \n5r0ncciKL40`
 
+     const message = `Welcome to Streetfolio - Model Portfolios by Streetgains\nYour login OTP is ${otp} 0vSY/VO83ac -STREETGAINS`
     // const message = `Thanks for choosing Streetfolios. Your OTP to sign the terms of service is : ${otp} -STREETGAINS`
     console.log(message)
 
