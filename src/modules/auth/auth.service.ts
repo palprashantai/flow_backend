@@ -310,8 +310,8 @@ export class AuthService {
         currentTime, // folio_created_on
         subscriber.id, // id
       ])
-console.log(`🔥 Existing subscriber login: ${subscriber.id}`)
-      
+      console.log(`🔥 Existing subscriber login: ${subscriber.id}`)
+
       // Call workflows
       await this.workflowService.callLeadCreationWorkflow(subscriber.id, 1)
       await this.workflowService.callSubscriberInsertWorkflow(subscriber.id, 1)
@@ -348,7 +348,7 @@ console.log(`🔥 Existing subscriber login: ${subscriber.id}`)
       state: finalSubscriber.state,
     }
 
-    return { usertype, jwt, subscriber: filteredSubscriber,foliousertype }
+    return { usertype, jwt, subscriber: filteredSubscriber, foliousertype }
   }
 
   /**
@@ -538,7 +538,7 @@ console.log(`🔥 Existing subscriber login: ${subscriber.id}`)
 
     // const message = `<#> Welcome to Streetgains. Your Login OTP is ${otp}\n\n - STREETGAINS \n5r0ncciKL40`
 
-     const message = `Welcome to Streetfolio - Model Portfolios by Streetgains\nYour login OTP is ${otp} 0vSY/VO83ac -STREETGAINS`
+    const message = `Welcome to Streetfolio - Model Portfolios by Streetgains\nYour login OTP is ${otp} 0vSY/VO83ac -STREETGAINS`
     // const message = `Thanks for choosing Streetfolios. Your OTP to sign the terms of service is : ${otp} -STREETGAINS`
     console.log(message)
 
