@@ -6,7 +6,7 @@ import { DataSource, In, Not, Repository } from 'typeorm'
 import { JwtPayload } from './auth.interface'
 import { ConfigService } from '@nestjs/config'
 import { getNextSubscriberID, getUserBy, getUtmByDeviceId, insertOtp, insertOtpLog } from './auth.repository'
-import { getCurrentDateTime, sanitize, sanitizeMobile } from 'helper'
+import { getCurrentDateTime,  nowInIST,  sanitize, sanitizeMobile } from 'helper'
 import { OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreation } from './auth.entity'
 import { RegisterDto, VerifyOtpDto } from './auth.dto'
 import { CommonService } from 'modules/common/common.service'
@@ -141,7 +141,7 @@ export class AuthService {
     const cleanOtp = sanitize(otp)
     const cleanDeviceId = deviceId || ''
     const cleanToken = fcmToken || ''
-    const currentTime = getCurrentDateTime()
+    const currentTime = nowInIST()
 
     if (!sanitizedMobile || !otp) {
       this.logger.warn('OTP or Mobile number missing in otpVerification')
@@ -187,6 +187,7 @@ export class AuthService {
         getNextSubscriberID(),
         this.workflowService.assignLeadSubscriber('MobileApp', 0, 1),
       ])
+      console.log(`🔥 New subscriber c: ${currentTime}`)
 
       const newSubscriber = this.subscriberRepo.create({
         subscriberid,
@@ -211,6 +212,7 @@ export class AuthService {
         folio_created_on: currentTime,
       })
 
+      console.log(newSubscriber)
       finalSubscriber = await this.subscriberRepo.save(newSubscriber)
 
       // Parallel (referral + recent logs)
@@ -221,7 +223,7 @@ export class AuthService {
           source: 'MobileApp',
           lead_type: usertype,
           lead_source: 'MobileApp',
-          created_on: new Date(),
+          created_on: currentTime,
           utm_source: logEvent?.utm_source || '',
           utm_campaign: logEvent?.utm_campaign || '',
           utm_medium: logEvent?.utm_medium || '',
@@ -271,7 +273,7 @@ export class AuthService {
         folio_deviceid: cleanDeviceId,
         token: cleanToken,
         is_folio_read: 0,
-        recent_contacted: new Date(),
+        recent_contacted: currentTime,
       })
 
       await Promise.all([
@@ -281,7 +283,7 @@ export class AuthService {
           source: 'MobileApp',
           lead_type: usertype,
           lead_source: 'MobileApp',
-          created_on: new Date(),
+          created_on: currentTime,
           utm_source: logEvent?.utm_source || '',
           utm_campaign: logEvent?.utm_campaign || '',
           utm_medium: logEvent?.utm_medium || '',
@@ -291,7 +293,7 @@ export class AuthService {
       finalSubscriber = subscriber
     }
 
-    if (subscriber.isfolio === 0) {
+    if (finalSubscriber.isfolio === 0) {
       // Assign folio workflow user
       // const assignedto = await this.workflowService.assignLeadSubscriber('MobileApp', 0, 1)
 
@@ -308,7 +310,7 @@ export class AuthService {
 
       await this.dataSource.query(query, [
         currentTime, // folio_created_on
-        subscriber.id, // id
+        finalSubscriber.id, // id
       ])
       console.log(`🔥 Existing subscriber login: ${subscriber.id}`)
 

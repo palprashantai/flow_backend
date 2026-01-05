@@ -84,3 +84,12 @@ export function stringRepair3(tempText: string): string {
   tempText = tempText.replace(/&#34;/g, '"')
   return tempText
 }
+
+export function nowInIST(): string {
+  const now = new Date()
+
+  // Add IST offset (5 hours 30 minutes = 19800000 milliseconds)
+  const istTime = new Date(now.getTime() + 5.5 * 60 * 60 * 1000)
+
+  return istTime.toISOString().slice(0, 19).replace('T', ' ')
+}
