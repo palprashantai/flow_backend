@@ -191,7 +191,7 @@ export class Subscriber {
   @Column({ type: 'int', default: 0 })
   created_by: number
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'date', nullable: true })
   created_on: Date
 
   @Column({ type: 'date', nullable: true })
