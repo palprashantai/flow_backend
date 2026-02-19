@@ -6,7 +6,7 @@ import { DataSource, In, Not, Repository } from 'typeorm'
 import { JwtPayload } from './auth.interface'
 import { ConfigService } from '@nestjs/config'
 import { getNextSubscriberID, getUserBy, getUtmByDeviceId, insertOtp, insertOtpLog } from './auth.repository'
-import { getCurrentDateTime,  nowInIST,  sanitize, sanitizeMobile } from 'helper'
+import { getCurrentDateTime, nowInIST, sanitize, sanitizeMobile } from 'helper'
 import { OtpBoxEntity, Subscriber, SubscriberRecent, UserInfo, WorkflowLeadCreation } from './auth.entity'
 import { RegisterDto, VerifyOtpDto } from './auth.dto'
 import { CommonService } from 'modules/common/common.service'
@@ -179,7 +179,10 @@ export class AuthService {
     // ---------------------------------------------------------------------
     // NEW SUBSCRIBER FLOW
     // ---------------------------------------------------------------------
+
+    console.log(subscriber)
     if (!subscriber) {
+      console.log(' new subscriber --->', subscriber)
       usertype = 1
       foliousertype = 1
 
@@ -210,6 +213,8 @@ export class AuthService {
         assignedto_folio: assignedto,
         assignedto: assignedto,
         folio_created_on: currentTime,
+        clickid: logEvent?.clickid || '',
+        clicktype: logEvent?.clicktype || 0,
       })
 
       console.log(newSubscriber)
@@ -227,6 +232,7 @@ export class AuthService {
           utm_source: logEvent?.utm_source || '',
           utm_campaign: logEvent?.utm_campaign || '',
           utm_medium: logEvent?.utm_medium || '',
+          clickid: logEvent?.clickid || '',
         }),
       ])
 

@@ -93,7 +93,44 @@ export async function getNextSubscriberID(): Promise<string> {
 }
 
 export async function getUtmByDeviceId(deviceId: string) {
+  // try {
+  //   const ds = await dataSource
+
+  //   const record = await ds
+  //     .createQueryBuilder()
+  //     .select('payload')
+  //     .from('tbl_log_appevents', 'e')
+  //     .where('device_id = :deviceId', { deviceId })
+  //     .andWhere('event_type = "app_install_attributes"')
+  //     .orderBy('created_on', 'DESC')
+  //     .getRawOne<{ payload: string }>()
+
+  //   if (!record?.payload) return {}
+
+  //   let payload: any
+  //   try {
+  //     payload = JSON.parse(record.payload)
+  //   } catch (err) {
+  //     logger.warn('⚠️ Invalid JSON in payload, returning empty object')
+  //     return {}
+  //   }
+
+  //   const referrer: string = payload.installReferrer
+  //   if (!referrer) return {}
+
+  //   const params = new URLSearchParams(referrer)
+  //   const utm_source = params.get('utm_source') || ''
+  //   const utm_campaign = params.get('utm_campaign') || ''
+  //   const utm_medium = params.get('utm_medium') || ''
+
+  //   return { utm_source, utm_campaign, utm_medium }
+  // } catch (err) {
+  //   logger.error('❌ Error fetching UTM data:', err)
+  //   throw new InternalServerErrorException('Failed to fetch UTM data', (err as Error).message)
+  // }
+
   try {
+    // 1️⃣ Get latest install event
     const ds = await dataSource
 
     const record = await ds
@@ -105,8 +142,11 @@ export async function getUtmByDeviceId(deviceId: string) {
       .orderBy('created_on', 'DESC')
       .getRawOne<{ payload: string }>()
 
+    //   if (!record?.payload) return {}
+
     if (!record?.payload) return {}
 
+    // 2️⃣ Parse JSON safely
     let payload: any
     try {
       payload = JSON.parse(record.payload)
@@ -118,14 +158,41 @@ export async function getUtmByDeviceId(deviceId: string) {
     const referrer: string = payload.installReferrer
     if (!referrer) return {}
 
+    // 3️⃣ Parse referrer params
     const params = new URLSearchParams(referrer)
-    const utm_source = params.get('utm_source') || ''
-    const utm_campaign = params.get('utm_campaign') || ''
-    const utm_medium = params.get('utm_medium') || ''
 
-    return { utm_source, utm_campaign, utm_medium }
+    let utm_source = params.get('utm_source') || ''
+    let utm_campaign = params.get('utm_campaign') || ''
+    let utm_medium = params.get('utm_medium') || ''
+    let utm_content = params.get('utm_content') || ''
+    let utm_term = params.get('utm_term') || ''
+
+    let clickid = ''
+    let clicktype = 0
+
+    // 4️⃣ If UTM missing → derive from GCLID (ONLY RULE YOU WANTED)
+    if (!utm_source) {
+      const gclid = params.get('gclid')
+
+      if (gclid) {
+        utm_source = 'Google'
+        utm_medium = 'GCLID'
+        clickid = gclid
+        clicktype = 1
+      }
+    }
+
+    // 5️⃣ Return normalized attribution
+    return {
+      utm_source,
+      utm_campaign,
+      utm_medium,
+      utm_content,
+      utm_term,
+      clickid,
+      clicktype,
+    }
   } catch (err) {
-    logger.error('❌ Error fetching UTM data:', err)
     throw new InternalServerErrorException('Failed to fetch UTM data', (err as Error).message)
   }
 }

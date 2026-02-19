@@ -176,6 +176,9 @@ export class Subscriber {
   @Column({ type: 'tinyint', default: 0 })
   telegram_call: number
 
+  @Column({ type: 'tinyint', default: 0 })
+  clicktype: number
+
   @Column({ type: 'int', default: 0 })
   isdelete: number
 
@@ -251,7 +254,7 @@ export class Subscriber {
   @Column({ type: 'varchar', length: 255, nullable: true })
   utm_term: string
 
-  @Column({ type: 'varchar', length: 30, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   clickid: string
 
   @Column({ type: 'varchar', length: 50, nullable: true })
