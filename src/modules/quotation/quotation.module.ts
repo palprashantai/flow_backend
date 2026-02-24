@@ -3,9 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { QuotationController } from './quotation.controller'
 import { QuotationService } from './quotation.service'
 import { Quotation, QuotationItem, QuotationItineraryDay } from './quotation.entity'
+import { CrmAuthModule } from '../crm-auth/crm-auth.module'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Quotation, QuotationItem, QuotationItineraryDay])],
+    imports: [
+        TypeOrmModule.forFeature([Quotation, QuotationItem, QuotationItineraryDay]),
+        CrmAuthModule,
+    ],
     controllers: [QuotationController],
     providers: [QuotationService],
     exports: [QuotationService],

@@ -3,9 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { InvoiceController } from './invoice.controller'
 import { InvoiceService } from './invoice.service'
 import { Invoice, InvoicePayment } from './invoice.entity'
+import { CrmAuthModule } from '../crm-auth/crm-auth.module'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Invoice, InvoicePayment])     ],
+    imports: [
+        TypeOrmModule.forFeature([Invoice, InvoicePayment]),
+        CrmAuthModule,
+    ],
     controllers: [InvoiceController],
     providers: [InvoiceService],
     exports: [InvoiceService],
