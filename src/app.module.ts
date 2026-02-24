@@ -8,7 +8,6 @@ import { AppService } from './app.service'
 import { HttpModule } from '@nestjs/axios'
 import { dataSourceOptions } from './databases/data-source'
 import { JwtModule } from '@nestjs/jwt'
-// import { RateLimitMiddleware } from 'middlewares/rate-limit.middleware'
 import { AuthModule } from 'modules/auth/auth.module'
 import { CommonModule } from 'modules/common/common.module'
 import { CacheModule } from 'cache.module'
@@ -25,7 +24,6 @@ import { InvoiceModule } from 'modules/invoice/invoice.module'
 import { CrmAuthModule } from 'modules/crm-auth/crm-auth.module'
 import { CrmUserModule } from 'modules/user/crm-user.module'
 import { CalendarEventModule } from 'modules/calendar-event/calendar-event.module'
-//import { GrpcClientModule } from 'grpc/grpc-client.module'
 
 @Module({
   imports: [
@@ -40,21 +38,21 @@ import { CalendarEventModule } from 'modules/calendar-event/calendar-event.modul
       global: true,
     },
 
-    TypeOrmModule.forRoot({
-      name: 'secondary',
-      type: 'mysql',
-      host: process.env.SECONDARY_DB_HOST || 'localhost',
-      port: parseInt(process.env.SECONDARY_DB_PORT || '3306'),
-      username: process.env.SECONDARY_DB_USER || 'root',
-      password: process.env.SECONDARY_DB_PASS || 'password2',
-      database: process.env.SECONDARY_DB_NAME || 'analytics_db',
-      entities: [__dirname + '/path/to/analytics/**/*.entity{.ts,.js}'],
-      synchronize: false,
-      extra: {
-        connectionLimit: 10, // adjust higher if needed
-      },
-      // autoLoadEntities: true, // optional if entities path is set
-    }),
+    // TypeOrmModule.forRoot({
+    //   name: 'secondary',
+    //   type: 'mysql',
+    //   host: process.env.SECONDARY_DB_HOST || 'localhost',
+    //   port: parseInt(process.env.SECONDARY_DB_PORT || '3306'),
+    //   username: process.env.SECONDARY_DB_USER || 'root',
+    //   password: process.env.SECONDARY_DB_PASS || 'password2',
+    //   database: process.env.SECONDARY_DB_NAME || 'analytics_db',
+    //   entities: [__dirname + '/path/to/analytics/**/*.entity{.ts,.js}'],
+    //   synchronize: false,
+    //   extra: {
+    //     connectionLimit: 10, // adjust higher if needed
+    //   },
+    //   // autoLoadEntities: true, // optional if entities path is set
+    // }),
 
     ConfigModule.forRoot({
       isGlobal: true,

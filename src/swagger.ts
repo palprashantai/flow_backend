@@ -1,71 +1,97 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { INestApplication } from '@nestjs/common'
-import { AuthModule } from 'modules/auth/auth.module'
 import { CrmUserModule } from 'modules/user/crm-user.module'
+import { CustomerModule } from 'modules/customer/customer.module'
+import { QuotationModule } from 'modules/quotation/quotation.module'
+import { InvoiceModule } from 'modules/invoice/invoice.module'
+import { EnquiryModule } from 'modules/enquiry/enquiry.module'
+import { TravelPackageModule } from 'modules/travel-package/travel-package.module'
+import { ItineraryModule } from 'modules/itinerary/itinerary.module'
+import { BookingModule } from 'modules/booking/booking.module'
+import { CalendarEventModule } from 'modules/calendar-event/calendar-event.module'
+import { CrmPaymentModule } from 'modules/crm-payment/crm-payment.module'
+import { CrmAuthModule } from 'modules/crm-auth/crm-auth.module'
 
 
 
 const releaseNotes = `
-### 🆕 Smallcase Integration & Referral APIs — 2025-09-03
+### 🆕 CRM & Travel Module Updates — 2026-02-24
 
-      ✅ New Smallcase Auth Management:
-        - POST /smallcase/map-auth
-          — Map Smallcase Auth Token with User Account
-        - GET /smallcase/auth  
-          — Retrieve user's Smallcase Auth ID
-        - DELETE /smallcase/auth
-          — Remove/disconnect Smallcase Auth ID
-        - POST /appApi/smallcase/connect
-          — Connect Smallcase account directly from app
+      ✅ Customer & Enquiry Management
+        - Customer creation and profile management
+        - Enquiry tracking and follow-ups
 
-      ✅ New Referral System:
-        - GET /referral/home
-          — Get wallet balance, referral code, and FAQs
-          — Includes promotional card text and user referral code
+      ✅ Quotation & Invoice System
+        - Generate travel quotations
+        - Convert quotation to invoice
+        - Invoice payment tracking
 
-      ✅ Database Updates:
-        - Modified tbl_subscriber.authid to VARCHAR(50)
-          — Now supports Smallcase Auth ID strings
-        - Enhanced wallet balance calculation
-          — Handles positive/negative amounts summation
+      ✅ Travel Package & Itinerary Builder
+        - Create customizable travel packages
+        - Day-wise itinerary management
+        - Editable itinerary timeline
+
+      ✅ Booking & Calendar
+        - Booking lifecycle management
+        - Calendar event scheduling
+
+      ✅ CRM Payments
+        - Record and manage customer payments
 `
 
 export function setupSwagger(app: INestApplication) {
   const options = new DocumentBuilder()
-    .setTitle('STREETFOLIOS API DOCUMENTATION')
+    .setTitle('CRM & TRAVEL MANAGEMENT API')
     .setDescription(
       `
-      This is StreetFolios API documentation - Your gateway to data-driven investment research and analysis.
-      
-      StreetFolios is a SEBI-Registered Research Analyst (INH000017082) founded in 2016, dedicated to supporting 
-      Indian retail traders in achieving financial independence. Our platform offers comprehensive data-driven research 
-      encompassing various stock market strategies, including technical and fundamental analysis, helping clients make 
-      informed investment decisions.
+      This is the CRM & Travel Management API documentation.
 
-      ${releaseNotes}  <!-- Add release notes here -->
-    `
+      The system provides complete management for:
+      - Customer & Enquiry handling
+      - Travel Packages & Itinerary builder
+      - Quotation & Invoice generation
+      - Booking lifecycle
+      - Calendar event scheduling
+      - Payment tracking
+
+      ${releaseNotes}
+      `
     )
     .setVersion('1.0')
     .addBearerAuth()
-    .setExternalDoc('For more details click here', 'https://api-guide.streetfolios.com')
-    .setTermsOfService('https://www.streetfolios.com/terms-of-service')
-    .setContact('StreetFolios Support', 'https://www.streetfolios.com/support', 'support@streetfolios.com')
-    .addTag('Authentication', 'User authentication and authorization')
-    .addTag('User', 'User management and profile management')
-    .addTag('Portfolio', 'Portfolio management and insights')
-    .addTag('Payment', 'Smallcase and Razorpay investment and payment')
-    .addTag('Smallcase', 'Smallcase investment and  payment ')
-    .addTag('Referral', 'Referral and wallet program management')
-    .addTag('Setting', 'App setting')
+    .setExternalDoc('API Guide', 'https://your-domain.com/api-guide')
+    .setContact('CRM Support Team', 'https://your-domain.com/support', 'support@your-domain.com')
+
+    // Core Tags
+    // .addTag('Authentication', 'User authentication and authorization')
+    // .addTag('User', 'CRM user management')
+    // .addTag('Customer', 'Customer profile management')
+    // .addTag('Enquiry', 'Customer enquiry tracking')
+    // .addTag('Quotation', 'Travel quotation management')
+    // .addTag('Invoice', 'Invoice generation and tracking')
+    // .addTag('Travel Package', 'Travel package management')
+    // .addTag('Itinerary', 'Day-wise itinerary builder')
+    // .addTag('Booking', 'Booking management')
+    // .addTag('Calendar', 'Calendar event management')
+    // .addTag('Payment', 'CRM payment management')
+    
     .build()
 
   const document = SwaggerModule.createDocument(app, options, {
-    include: [AuthModule, CrmUserModule ],
+    include: [
+      CrmUserModule,
+      CustomerModule,
+      EnquiryModule,
+      InvoiceModule,
+      ItineraryModule,
+      QuotationModule,
+      TravelPackageModule,
+      BookingModule,
+      CalendarEventModule,
+      CrmPaymentModule,
+      CrmAuthModule
+    ],
   })
-
-  if (document.components?.securitySchemes) {
-    delete document.components.securitySchemes['bearerAuth']
-  }
 
   SwaggerModule.setup('api-docs', app, document)
 }

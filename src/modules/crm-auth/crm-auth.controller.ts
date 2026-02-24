@@ -18,8 +18,8 @@ export class CrmAuthController {
     }
 
     @Post('register')
-    @Auth()
-    @ApiBearerAuth()
+    // @Auth()
+    // @ApiBearerAuth()
     @ApiOperation({ summary: 'Register a new CRM user (Admin only)' })
     @ApiResponse({ status: 201, description: 'User created' })
     async register(@Body() dto: CrmRegisterDto) {
