@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm'
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn  } from 'typeorm'
 
 export enum UserRole {
     SuperAdmin = 'SuperAdmin',

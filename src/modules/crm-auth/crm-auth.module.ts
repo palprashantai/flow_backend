@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { CrmAuthController } from './crm-auth.controller'
 import { CrmAuthService } from './crm-auth.service'
 import { CrmAuthGuard } from './crm-auth.guard'
-import { User } from '../user/user.entity'
+import { User } from 'modules/user/crm-user.entity'
 
 @Module({
     imports: [

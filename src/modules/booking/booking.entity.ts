@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Many
 import { Customer } from '../customer/customer.entity'
 import { Enquiry } from '../enquiry/enquiry.entity'
 import { Quotation } from '../quotation/quotation.entity'
-import { User } from '../user/user.entity'
+import { User } from 'modules/user/crm-user.entity'
 
 export enum BookingStatus {
     Confirmed = 'Confirmed',

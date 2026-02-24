@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryColumn, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm'
 import { Customer, LeadSource } from '../customer/customer.entity'
-import { User } from '../user/user.entity'
+import { User } from 'modules/user/crm-user.entity'
 
 export enum EnquiryStatus {
     New = 'New',

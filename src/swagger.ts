@@ -1,12 +1,9 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { INestApplication } from '@nestjs/common'
 import { AuthModule } from 'modules/auth/auth.module'
-import { SettingModule } from 'modules/setting/setting.module'
-import { PortfolioModule } from 'modules/portfolio/portfolio.module'
-import { UserModule } from 'modules/user/user.module'
-import { PaymentModule } from 'modules/payment/payment.module'
-import { SmallcaseModule } from 'modules/smallcase/smallcase.module'
-import { ReferralModule } from 'modules/referral/referral.module'
+import { CrmUserModule } from 'modules/user/crm-user.module'
+
+
 
 const releaseNotes = `
 ### 🆕 Smallcase Integration & Referral APIs — 2025-09-03
@@ -63,7 +60,7 @@ export function setupSwagger(app: INestApplication) {
     .build()
 
   const document = SwaggerModule.createDocument(app, options, {
-    include: [AuthModule, UserModule, PortfolioModule, PaymentModule, SmallcaseModule, ReferralModule, SettingModule],
+    include: [AuthModule, CrmUserModule ],
   })
 
   if (document.components?.securitySchemes) {

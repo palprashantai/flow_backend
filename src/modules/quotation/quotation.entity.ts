@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Many
 import { Customer } from '../customer/customer.entity'
 import { Enquiry } from '../enquiry/enquiry.entity'
 import { TravelPackage } from '../travel-package/travel-package.entity'
-import { User } from '../user/user.entity'
+import { User } from 'modules/user/crm-user.entity'
 
 export enum QuotationStatus {
     Draft = 'Draft',

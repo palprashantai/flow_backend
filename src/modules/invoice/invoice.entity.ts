@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Index, PrimaryGeneratedColumn } from 'typeorm'
 import { Booking } from '../booking/booking.entity'
 import { Customer } from '../customer/customer.entity'
-import { User } from '../user/user.entity'
+import { User } from 'modules/user/crm-user.entity'
 
 export enum InvoiceStatus {
     Draft = 'Draft',

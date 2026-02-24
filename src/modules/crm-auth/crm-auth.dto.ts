@@ -1,6 +1,6 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
-import { UserRole } from '../user/user.entity'
+import { UserRole } from 'modules/user/crm-user.entity'
 
 export class CrmLoginDto {
     @ApiProperty({ example: 'admin@tourflow.com' })

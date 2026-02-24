@@ -1,5 +1,5 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm'
-import { User } from '../user/user.entity'
+import { User } from 'modules/user/crm-user.entity'
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn  } from 'typeorm'
 
 export enum PackageStatus {
     Active = 'Active',

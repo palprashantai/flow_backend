@@ -9,10 +9,10 @@ export class QuotationService {
     constructor(
         @InjectRepository(Quotation)
         private readonly quotationRepository: Repository<Quotation>,
-        @InjectRepository(QuotationItem)
-        private readonly itemRepository: Repository<QuotationItem>,
-        @InjectRepository(QuotationItineraryDay)
-        private readonly itinDayRepository: Repository<QuotationItineraryDay>,
+        // @InjectRepository(QuotationItem)
+        // private readonly itemRepository: Repository<QuotationItem>,
+        // @InjectRepository(QuotationItineraryDay)
+        // private readonly itinDayRepository: Repository<QuotationItineraryDay>,
         private readonly dataSource: DataSource,
     ) { }
 

@@ -1,5 +1,5 @@
+import { User } from 'modules/user/crm-user.entity'
 import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm'
-import { User } from '../user/user.entity'
 
 export enum LeadSource {
     WhatsApp = 'WhatsApp',

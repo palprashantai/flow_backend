@@ -4,8 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ConfigService } from '@nestjs/config'
 import * as bcrypt from 'bcrypt'
-import { User, UserRole } from '../user/user.entity'
 import { CrmLoginDto, CrmRegisterDto } from './crm-auth.dto'
+import { User, UserRole } from 'modules/user/crm-user.entity'
 
 @Injectable()
 export class CrmAuthService {

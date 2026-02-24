@@ -9,10 +9,10 @@ export class ItineraryService {
     constructor(
         @InjectRepository(Itinerary)
         private readonly itineraryRepository: Repository<Itinerary>,
-        @InjectRepository(ItineraryDay)
-        private readonly dayRepository: Repository<ItineraryDay>,
-        @InjectRepository(ItineraryDayActivity)
-        private readonly activityRepository: Repository<ItineraryDayActivity>,
+        // @InjectRepository(ItineraryDay)
+        // private readonly dayRepository: Repository<ItineraryDay>,
+        // @InjectRepository(ItineraryDayActivity)
+        // private readonly activityRepository: Repository<ItineraryDayActivity>,
         private readonly dataSource: DataSource
     ) { }
 

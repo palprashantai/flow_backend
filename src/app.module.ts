@@ -13,7 +13,6 @@ import { AuthModule } from 'modules/auth/auth.module'
 import { CommonModule } from 'modules/common/common.module'
 import { CacheModule } from 'cache.module'
 
-import { UserModule } from 'modules/user/user.module'
 
 import { CustomerModule } from 'modules/customer/customer.module'
 import { EnquiryModule } from 'modules/enquiry/enquiry.module'
@@ -63,7 +62,6 @@ import { CalendarEventModule } from 'modules/calendar-event/calendar-event.modul
     HttpModule,
     //GrpcClientModule,
     AuthModule,
-    UserModule,
     CommonModule,
 
     CustomerModule,
