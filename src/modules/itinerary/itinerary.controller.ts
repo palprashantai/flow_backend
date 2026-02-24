@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { Auth  } from 'modules/auth/auth.guard'
 import { CreateItineraryDto, UpdateItineraryDto } from './itinerary.dto'
 import { ItineraryService } from './itinerary.service'
+import { Auth } from 'modules/crm-auth/crm-auth.guard'
 
 @ApiTags('CRM - Itinerary')
 @Controller('appApi/crm/itineraries')

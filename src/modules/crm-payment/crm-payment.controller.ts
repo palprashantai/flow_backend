@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { Auth } from 'modules/auth/auth.guard'
 import { CreateCrmPaymentDto, UpdateCrmPaymentDto } from './crm-payment.dto'
+import { Auth } from 'modules/crm-auth/crm-auth.guard'
 
 @ApiTags('CRM - Payment')
 @Controller('appApi/crm/payments')

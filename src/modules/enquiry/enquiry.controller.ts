@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { Auth, GetUserId } from 'modules/auth/auth.guard'
+import { Auth, GetCrmUserId } from 'modules/crm-auth/crm-auth.guard'
 import { CreateEnquiryDto, UpdateEnquiryDto } from './enquiry.dto'
 import { EnquiryService } from './enquiry.service'
 
@@ -14,7 +14,7 @@ export class EnquiryController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new enquiry' })
     @ApiResponse({ status: 201, description: 'Enquiry created successfully' })
-    async create(@Body() dto: CreateEnquiryDto, @GetUserId('id') userId: string) {
+    async create(@Body() dto: CreateEnquiryDto, @GetCrmUserId() userId: string) {
         const data = await this.enquiryService.create(dto, userId)
         return { success: true, message: 'Enquiry created', data }
     }
@@ -41,7 +41,7 @@ export class EnquiryController {
     @Auth()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Update an enquiry' })
-    async update(@Param('id') id: string, @Body() dto: UpdateEnquiryDto, @GetUserId('id') userId: string) {
+    async update(@Param('id') id: string, @Body() dto: UpdateEnquiryDto, @GetCrmUserId() userId: string) {
         const data = await this.enquiryService.update(id, dto, userId)
         return { success: true, message: 'Enquiry updated', data }
     }
@@ -58,7 +58,7 @@ export class EnquiryController {
     @Auth()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Add a log to an enquiry' })
-    async addLog(@Param('id') id: string, @Body() log: { type: string; text: string }, @GetUserId('id') userId: string) {
+    async addLog(@Param('id') id: string, @Body() log: { type: string; text: string }, @GetCrmUserId() userId: string) {
         const data = await this.enquiryService.addLog(id, log, userId)
         return { success: true, message: 'Log added', data }
     }

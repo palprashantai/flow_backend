@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { BookingService } from './booking.service'
 import { CreateBookingDto, UpdateBookingDto, CancelBookingDto } from './booking.dto'
+import { Auth, GetCrmUserId } from 'modules/crm-auth/crm-auth.guard'
 
 @ApiTags('CRM - Booking')
 @Controller('appApi/crm/bookings')
@@ -14,7 +14,7 @@ export class BookingController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new booking' })
     @ApiResponse({ status: 201, description: 'Booking created' })
-    async create(@Body() dto: CreateBookingDto, @GetUserId('id') userId: string) {
+    async create(@Body() dto: CreateBookingDto, @GetCrmUserId() userId: string) {
         const data = await this.bookingService.create(dto, userId)
         return { success: true, data }
     }

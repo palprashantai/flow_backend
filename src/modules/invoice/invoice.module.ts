@@ -5,7 +5,7 @@ import { InvoiceService } from './invoice.service'
 import { Invoice, InvoicePayment } from './invoice.entity'
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Invoice, InvoicePayment])],
+    imports: [TypeOrmModule.forFeature([Invoice, InvoicePayment])     ],
     controllers: [InvoiceController],
     providers: [InvoiceService],
     exports: [InvoiceService],

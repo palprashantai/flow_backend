@@ -8,7 +8,6 @@ import { AppService } from './app.service'
 import { HttpModule } from '@nestjs/axios'
 import { dataSourceOptions } from './databases/data-source'
 import { JwtModule } from '@nestjs/jwt'
-import { AuthModule } from 'modules/auth/auth.module'
 import { CommonModule } from 'modules/common/common.module'
 import { CacheModule } from 'cache.module'
 
@@ -19,7 +18,7 @@ import { BookingModule } from 'modules/booking/booking.module'
 import { TravelPackageModule } from 'modules/travel-package/travel-package.module'
 import { ItineraryModule } from 'modules/itinerary/itinerary.module'
 import { QuotationModule } from 'modules/quotation/quotation.module'
-import { CrmPaymentModule } from 'modules/crm-payment/crm-payment.module'
+// import { CrmPaymentModule } from 'modules/crm-payment/crm-payment.module'
 import { InvoiceModule } from 'modules/invoice/invoice.module'
 import { CrmAuthModule } from 'modules/crm-auth/crm-auth.module'
 import { CrmUserModule } from 'modules/user/crm-user.module'
@@ -59,7 +58,6 @@ import { CalendarEventModule } from 'modules/calendar-event/calendar-event.modul
     }),
     HttpModule,
     //GrpcClientModule,
-    AuthModule,
     CommonModule,
 
     CustomerModule,
@@ -68,7 +66,7 @@ import { CalendarEventModule } from 'modules/calendar-event/calendar-event.modul
     TravelPackageModule,
     ItineraryModule,
     QuotationModule,
-    CrmPaymentModule,
+    // CrmPaymentModule,
     InvoiceModule,
     CalendarEventModule,
     CacheModule,

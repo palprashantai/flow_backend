@@ -1,20 +1,20 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { Auth, GetUserId } from 'modules/auth/auth.guard'
+import { Auth, GetCrmUserId } from 'modules/crm-auth/crm-auth.guard'
 import { CreateTravelPackageDto, UpdateTravelPackageDto } from './travel-package.dto'
 import { TravelPackageService } from './travel-package.service'
 
 @ApiTags('CRM - Travel Package')
 @Controller('appApi/crm/packages')
 export class TravelPackageController {
-    constructor(private readonly travelPackageService: TravelPackageService) { }
+    constructor(private readonly travelPackageService   : TravelPackageService) { }
 
     @Post()
     @Auth()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new travel package' })
     @ApiResponse({ status: 201, description: 'Package created successfully' })
-    async create(@Body() dto: CreateTravelPackageDto, @GetUserId('id') userId: string) {
+    async create(@Body() dto: CreateTravelPackageDto, @GetCrmUserId('id') userId: string) {
         const data = await this.travelPackageService.create(dto, userId)
         return { success: true, message: 'Package created', data }
     }

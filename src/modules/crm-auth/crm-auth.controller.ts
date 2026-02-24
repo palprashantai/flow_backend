@@ -32,6 +32,7 @@ export class CrmAuthController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get current user profile' })
     async getMe(@GetCrmUserId() userId: string) {
+        console.log(userId)
         const user = await this.crmAuthService.getMe(userId)
         return { success: true, user }
     }

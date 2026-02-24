@@ -1,8 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { Auth, GetUserId } from 'modules/auth/auth.guard'
+
+
 import { InvoiceService } from './invoice.service'
 import { CreateInvoiceDto, UpdateInvoiceDto, RecordPaymentDto } from './invoice.dto'
+import { Auth, GetCrmUserId } from 'modules/crm-auth/crm-auth.guard'
 
 @ApiTags('CRM - Invoice')
 @Controller('appApi/crm/invoices')
@@ -14,7 +16,7 @@ export class InvoiceController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new invoice' })
     @ApiResponse({ status: 201, description: 'Invoice created' })
-    async create(@Body() dto: CreateInvoiceDto, @GetUserId('id') userId: string) {
+    async create(@Body() dto: CreateInvoiceDto, @GetCrmUserId('id') userId: string) {
         const data = await this.invoiceService.create(dto, userId)
         return { success: true, data }
     }
@@ -59,7 +61,7 @@ export class InvoiceController {
     @Auth()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Record a payment against an invoice' })
-    async recordPayment(@Param('id') id: string, @Body() dto: RecordPaymentDto, @GetUserId('id') userId: string) {
+    async recordPayment(@Param('id') id: string, @Body() dto: RecordPaymentDto, @GetCrmUserId('id') userId: string) {
         const data = await this.invoiceService.recordPayment(id, dto, userId)
         return { success: true, data }
     }

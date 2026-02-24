@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { Auth, GetUserId } from 'modules/auth/auth.guard'
 import { QuotationService } from './quotation.service'
 import { CreateQuotationDto, UpdateQuotationDto } from './quotation.dto'
+import { Auth, GetCrmUserId } from 'modules/crm-auth/crm-auth.guard'
 
 @ApiTags('CRM - Quotation')
 @Controller('appApi/crm/quotations')
@@ -14,7 +14,7 @@ export class QuotationController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new quotation' })
     @ApiResponse({ status: 201, description: 'Quotation created' })
-    async create(@Body() dto: CreateQuotationDto, @GetUserId('id') userId: string) {
+    async create(@Body() dto: CreateQuotationDto, @GetCrmUserId('id') userId: string) {
         const data = await this.quotationService.create(dto, userId)
         return { success: true, data }
     }
