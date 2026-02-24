@@ -11,13 +11,21 @@ import { JwtModule } from '@nestjs/jwt'
 // import { RateLimitMiddleware } from 'middlewares/rate-limit.middleware'
 import { AuthModule } from 'modules/auth/auth.module'
 import { CommonModule } from 'modules/common/common.module'
-import { SettingModule } from 'modules/setting/setting.module'
 import { CacheModule } from 'cache.module'
-import { PortfolioModule } from 'modules/portfolio/portfolio.module'
+
 import { UserModule } from 'modules/user/user.module'
-import { PaymentModule } from 'modules/payment/payment.module'
-import { SmallcaseModule } from 'modules/smallcase/smallcase.module'
-import { ReferralModule } from 'modules/referral/referral.module'
+
+import { CustomerModule } from 'modules/customer/customer.module'
+import { EnquiryModule } from 'modules/enquiry/enquiry.module'
+import { BookingModule } from 'modules/booking/booking.module'
+import { TravelPackageModule } from 'modules/travel-package/travel-package.module'
+import { ItineraryModule } from 'modules/itinerary/itinerary.module'
+import { QuotationModule } from 'modules/quotation/quotation.module'
+import { CrmPaymentModule } from 'modules/crm-payment/crm-payment.module'
+import { InvoiceModule } from 'modules/invoice/invoice.module'
+import { CrmAuthModule } from 'modules/crm-auth/crm-auth.module'
+import { CrmUserModule } from 'modules/user/crm-user.module'
+import { CalendarEventModule } from 'modules/calendar-event/calendar-event.module'
 //import { GrpcClientModule } from 'grpc/grpc-client.module'
 
 @Module({
@@ -56,18 +64,25 @@ import { ReferralModule } from 'modules/referral/referral.module'
     //GrpcClientModule,
     AuthModule,
     UserModule,
-    SettingModule,
     CommonModule,
-    PortfolioModule,
-    PaymentModule,
-    SmallcaseModule,
-    ReferralModule,
+
+    CustomerModule,
+    EnquiryModule,
+    BookingModule,
+    TravelPackageModule,
+    ItineraryModule,
+    QuotationModule,
+    CrmPaymentModule,
+    InvoiceModule,
+    CalendarEventModule,
     CacheModule,
+    CrmAuthModule,
+    CrmUserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
 // implements NestModule {
 //   // configure(consumer: MiddlewareConsumer) {
 //   //   // consumer.apply(RateLimitMiddleware).forRoutes({ path: '*', method: RequestMethod.POST })
